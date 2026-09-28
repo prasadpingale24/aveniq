@@ -1,398 +1,328 @@
-# AVENIQ — Core Concepts
+# AVENIQ — Investigation Model
 
 ## 1. Purpose
 
-This document establishes the vocabulary and conceptual model used throughout AVENIQ.
+This document defines how AVENIQ conceptualizes an investigation.
 
-The purpose is to prevent implementation concepts from becoming confused with product concepts.
+The central idea is that incident investigation is not a single inference step.
 
----
+It is an iterative process of:
 
-# 2. Incident
-
-An **Incident** is the primary object being investigated.
-
-It represents an operational event or suspected operational problem requiring investigation.
-
-An incident may originate from:
-
-* an alert
-* a monitoring anomaly
-* a user report
-* an engineer observation
-* a manually initiated investigation
-
-An incident does not necessarily imply that the root cause is already known.
+> **question → evidence acquisition → observation → hypothesis → verification → refinement**
 
 ---
 
-# 3. Incident Context
+# 2. Investigation as a Loop
 
-**Incident Context** is the accumulated representation of everything currently known or relevant to an investigation.
-
-It may contain:
+A simplified investigation loop is:
 
 ```text
-Incident
-├── timeframe
-├── symptoms
-├── entities
-├── evidence
-├── relationships
-├── hypotheses
-├── questions
-├── human inputs
-├── actions
-├── impact
-├── remediation
-└── resolution state
+             ┌─────────────────────┐
+             │                     │
+             ↓                     │
+        Investigation Question    │
+             ↓                     │
+        Select Action / Tool       │
+             ↓                     │
+        Acquire Evidence          │
+             ↓                     │
+          Observation             │
+             ↓                     │
+      Update Incident Context     │
+             ↓                     │
+       Evaluate Hypotheses         │
+             ↓                     │
+     ┌───────┴────────┐            │
+     │                │            │
+ sufficient       insufficient     │
+     │                │            │
+     ↓                ↓            │
+  Verify          Ask / Search ────┘
+     ↓
+  Conclude
 ```
 
-Incident context evolves throughout the investigation.
+The loop may execute many times during a single incident.
 
 ---
 
-# 4. Signal
+# 3. Starting Context
 
-A **Signal** is an indication that something may be relevant to an incident.
+An investigation can begin with incomplete information.
+
+For example:
+
+```text
+Alert:
+checkout-api error rate > 10%
+```
+
+At this stage, AVENIQ does not know:
+
+* root cause
+* blast radius
+* affected dependency
+* whether a deployment is relevant
+* whether the alert itself represents the primary failure
+
+The system should therefore treat the alert as an **initial signal**, not an answer.
+
+---
+
+# 4. Investigation Questions
+
+Investigation should be driven by explicit questions.
 
 Examples:
 
-* alert
-* metric anomaly
-* log pattern
-* trace error
-* deployment event
-* user report
+### Symptom questions
 
-A signal is not necessarily evidence of root cause.
+* What changed?
+* When did the anomaly begin?
+* Which service exhibits the symptom?
+
+### Causal questions
+
+* What could explain this behavior?
+* What dependency could produce this failure?
+* Did a recent change contribute?
+
+### Scope questions
+
+* Which endpoints are affected?
+* Which regions are affected?
+* Which users are affected?
+
+### Verification questions
+
+* Does the suspected dependency show corresponding failure?
+* Did the symptom begin after the suspected change?
+* Does the evidence contradict the hypothesis?
 
 ---
 
-# 5. Evidence
+# 5. Investigation Actions
 
-**Evidence** is an observed or externally supplied piece of information that can be used to support or challenge an investigative claim.
+An agent can select actions based on the current question.
 
 Examples:
 
-* metric observation
-* log event
-* trace span
-* deployment record
-* configuration change
-* infrastructure event
-* human confirmation
+```text
+Question:
+Which service is failing?
 
-Evidence should have provenance.
+Action:
+Query error logs grouped by service.
+```
+
+```text
+Question:
+What changed before the failure?
+
+Action:
+Query deployment history for the affected service.
+```
+
+```text
+Question:
+Is the database responsible?
+
+Action:
+Query database connection metrics during incident window.
+```
+
+Actions should have explicit tool boundaries.
 
 ---
 
-# 6. Observation
+# 6. Investigation Depth
 
-An **Observation** is what the system can directly establish from an evidence source.
+AVENIQ should not attempt unlimited investigation.
+
+The desired depth is:
+
+> **Deep enough to establish evidence across relevant components and relationships, but not so deep that the investigation becomes an uncontrolled exploration of the entire system.**
+
+A useful stopping condition may include:
+
+* primary hypothesis has strong evidence
+* competing hypotheses have been reasonably challenged
+* impact is sufficiently understood
+* unresolved uncertainty is explicitly identified
+
+---
+
+# 7. Hypothesis Management
+
+Multiple hypotheses should be supported.
 
 Example:
 
-> "checkout-api error rate increased from 0.2% to 18% between 14:31 and 14:34."
-
-This is different from:
-
-> "The deployment caused the incident."
-
-The first is an observation.
-
-The second is a hypothesis or conclusion.
-
----
-
-# 7. Relationship
-
-A **Relationship** connects entities or evidence.
-
-Examples:
-
 ```text
-deployment
-   ↓
-service
-
-service
-   ↓
-database
-
-error
-   ↓
-request
-
-request
-   ↓
-user region
+H1 — Deployment configuration caused connection exhaustion
+H2 — Database infrastructure degraded
+H3 — Traffic spike exhausted connections
 ```
 
-Relationships may be:
-
-* explicitly provided by a source
-* deterministically derived
-* inferred
-
-The distinction should be preserved where relevant.
-
----
-
-# 8. Hypothesis
-
-A **Hypothesis** is a proposed explanation for observed behavior.
-
-A hypothesis should not automatically become the RCA.
-
-It must be evaluated against available evidence.
-
----
-
-# 9. Claim
-
-A **Claim** is a statement made during an investigation.
-
-Examples:
-
-* "The checkout API began failing at 14:32."
-* "A deployment occurred three minutes before the failure."
-* "The deployment changed database configuration."
-* "The configuration change contributed to connection exhaustion."
-
-Claims can have different evidence strength.
-
----
-
-# 10. Verification
-
-**Verification** is the process of determining whether a claim or hypothesis is sufficiently supported by available evidence.
-
-Verification may involve:
-
-* retrieving additional evidence
-* comparing time windows
-* checking dependencies
-* finding contradictory observations
-* asking a human
-* reproducing a condition
-
----
-
-# 11. Investigation
-
-An **Investigation** is the sequence through which AVENIQ gathers context, asks questions, evaluates hypotheses, and develops an explanation for an incident.
-
-Conceptually:
+Each hypothesis can accumulate:
 
 ```text
-Question
-   ↓
-Action
-   ↓
-Observation
-   ↓
-New question
-   ↓
-Evidence
-   ↓
-Hypothesis
-   ↓
-Verification
-   ↓
-Conclusion
+Supporting evidence
+Contradicting evidence
+Unknowns
+Human observations
+Verification status
 ```
 
----
-
-# 12. Evidence Graph
-
-The **Evidence Graph** represents relationships among:
-
-* evidence
-* entities
-* observations
-* claims
-* hypotheses
-* incident context
-
-It is a conceptual model rather than necessarily a literal graph database.
+The system should avoid prematurely collapsing all possibilities into one narrative.
 
 ---
 
-# 13. RCA
+# 8. Evidence-Driven Hypothesis Updates
 
-**Root Cause Analysis (RCA)** is the resulting explanation of why the incident occurred.
+Suppose:
 
-An AVENIQ RCA should ideally include:
+```text
+H1:
+Deployment caused connection exhaustion.
+```
 
-* primary cause
-* contributing factors
-* evidence
-* impact
+New evidence:
+
+```text
+Deployment at 14:29
+Connection usage increased at 14:30
+Errors began at 14:32
+Configuration changed connection pool size
+```
+
+H1 becomes stronger.
+
+If instead:
+
+```text
+Database infrastructure alert began at 14:25
+Deployment occurred at 14:40
+```
+
+H1 becomes weaker.
+
+This temporal reasoning is one of the important capabilities the investigation model must support.
+
+---
+
+# 9. Contradiction Is First-Class
+
+A strong investigation should actively search for contradictory evidence.
+
+For example:
+
+> "The deployment occurred immediately before the incident."
+
+This establishes correlation.
+
+But:
+
+> "The same deployment was active in another region with no failures."
+
+This may weaken the hypothesis or reveal a regional factor.
+
+Contradictory evidence should therefore not be hidden.
+
+---
+
+# 10. Human Interaction
+
+Human input is another evidence channel.
+
+The system may ask:
+
+> "Was this deployment intentionally rolled out only to Europe?"
+
+The answer:
+
+> "Yes, it was a canary deployment."
+
+can materially change the investigation.
+
+Human-provided information should be recorded separately from machine-observed evidence.
+
+---
+
+# 11. Investigation Termination
+
+An investigation may terminate when:
+
+### Resolved
+
+Evidence sufficiently supports a root cause and remediation has been verified.
+
+### Partially resolved
+
+A likely cause has been identified but verification is incomplete.
+
+### Inconclusive
+
+Available evidence is insufficient to establish a reliable RCA.
+
+### Blocked
+
+Required evidence or human information cannot be obtained.
+
+These states are preferable to forcing every investigation into a definitive RCA.
+
+---
+
+# 12. Investigation Quality
+
+Investigation quality should consider:
+
+* evidence coverage
+* source diversity
+* temporal consistency
+* causal plausibility
+* contradictory evidence
+* hypothesis discrimination
+* impact coverage
 * uncertainty
-* remediation
+* human validation
+
+A fluent answer is not necessarily a high-quality investigation.
 
 ---
 
-# 14. Blast Radius
+# 13. Investigation Record
 
-**Blast Radius** describes the scope of impact associated with an incident.
-
-It may include:
-
-* services
-* endpoints
-* regions
-* users
-* requests
-* business capabilities
-
-Blast radius should be evidence-derived where possible.
-
----
-
-# 15. Investigation State
-
-An investigation has a changing state.
-
-A conceptual state model:
+The investigation should preserve a structured record of:
 
 ```text
-Initialized
-    ↓
-Context Gathering
-    ↓
-Investigating
-    ↓
-Hypothesis Formation
-    ↓
-Verification
-    ↓
-Human Clarification ──┐
-    ↓                 │
-    └─────────────────┘
-    ↓
-RCA Candidate
-    ↓
-Resolution Verification
-    ↓
-Resolved
-    ↓
-Post-Incident
-```
-
-The actual state machine may evolve during implementation.
-
----
-
-# 16. Agent
-
-An **Agent** is an autonomous system component capable of deciding investigation actions within a defined responsibility and tool boundary.
-
-An agent is not equivalent to an LLM response.
-
-An agent can:
-
-* inspect context
-* select tools
-* retrieve evidence
-* evaluate results
-* decide next actions
-* ask questions
-* update investigation state
-
----
-
-# 17. Tool
-
-A **Tool** is an operation an agent can invoke.
-
-Examples:
-
-* query logs
-* query metrics
-* retrieve traces
-* inspect deployments
-* inspect service metadata
-
-MCP may provide one mechanism for exposing such tools.
-
----
-
-# 18. Connector
-
-A **Connector** provides access to an external operational system.
-
-Examples may include:
-
-* observability platforms
-* source-control systems
-* deployment systems
-* incident-management systems
-
-AVENIQ should conceptually separate the connector from the investigation logic.
-
----
-
-# 19. Generative UI
-
-**Generative UI** is the ability to dynamically construct an interface based on the current investigation context and user needs.
-
-It should not mean arbitrary AI-generated HTML.
-
-The intended concept is:
-
-```text
-Incident context
-      +
-User perspective
-      +
-Investigation state
-      ↓
-Relevant UI composition
-```
-
----
-
-# 20. Knowledge
-
-**Knowledge** is reusable information derived from resolved incidents.
-
-Examples:
-
-* known failure patterns
-* diagnostic procedures
-* observability lessons
-* remediation patterns
-* prevention recommendations
-
-Knowledge should preserve its relationship to the incident evidence from which it was derived.
-
----
-
-# 21. Core Principle
-
-The conceptual hierarchy of AVENIQ is:
-
-```text
-Signals
-   ↓
+Questions
+Actions
 Evidence
-   ↓
-Context
-   ↓
-Investigation
-   ↓
+Observations
 Hypotheses
-   ↓
-Verification
-   ↓
-RCA
-   ↓
-Knowledge
+Contradictions
+Human inputs
+Conclusions
+Uncertainty
 ```
 
-AI and agents operate **within this system**.
+This record becomes the foundation for:
 
-They are not the system itself.
+* RCA
+* reports
+* knowledge
+* evaluation
+* debugging AVENIQ itself
+
+---
+
+# 14. Core Principle
+
+AVENIQ should behave less like:
+
+> **"Ask AI → receive RCA."**
+
+and more like:
+
+> **"Give AI an investigation objective → let it gather evidence → inspect what it finds → challenge its hypotheses → involve the human when necessary → produce an evidence-backed conclusion."**

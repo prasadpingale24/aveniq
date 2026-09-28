@@ -1,372 +1,297 @@
-# AVENIQ — Evidence Model
+# AVENIQ — RCA Model
 
 ## 1. Purpose
 
-Evidence is the foundation of AVENIQ.
+The RCA model defines how AVENIQ represents and communicates a root cause analysis.
 
-The system's central reliability principle is:
+The objective is not to produce the shortest possible explanation.
 
-> **A conclusion should be traceable to the evidence that supports it.**
+The objective is to produce an explanation that is:
 
-This document defines the conceptual structure of evidence and how it should relate to observations, claims, hypotheses, and RCA.
-
----
-
-# 2. What Counts as Evidence?
-
-Evidence is information that can materially contribute to an investigation.
-
-Potential sources include:
-
-* logs
-* metrics
-* traces
-* alerts
-* deployments
-* configuration changes
-* infrastructure events
-* service metadata
-* source-control events
-* incident records
-* human responses
-
-Evidence does not automatically mean "proof."
-
-A log line can be relevant without proving causality.
+* evidence-backed
+* causally plausible
+* inspectable
+* appropriately scoped
+* explicit about uncertainty
 
 ---
 
-# 3. Evidence Types
+# 2. RCA Is a Structured Explanation
 
-## 3.1 Telemetry Evidence
+An RCA should not be treated as a single text string.
 
-Examples:
-
-* log records
-* metric observations
-* trace spans
-* profiles
-
----
-
-## 3.2 Change Evidence
-
-Examples:
-
-* deployment
-* configuration change
-* feature-flag change
-* infrastructure modification
-* code change
-
----
-
-## 3.3 Context Evidence
-
-Examples:
-
-* service ownership
-* dependency relationships
-* environment
-* region
-* version
-* topology
-
----
-
-## 3.4 Human Evidence
-
-Information supplied by an engineer or operator.
-
-Example:
-
-> "The database migration was intentionally paused at 14:20."
-
-Human evidence can be highly valuable but should remain distinguishable from automatically observed telemetry.
-
----
-
-# 4. Evidence Provenance
-
-Each evidence item should ideally contain:
+Conceptually:
 
 ```text
-Evidence
-├── source
-├── source type
-├── timestamp
-├── entity
-├── observation
-├── query / retrieval context
-├── environment
-└── provenance metadata
+RCA
+├── Summary
+├── Root cause
+├── Contributing factors
+├── Timeline
+├── Affected components
+├── Blast radius
+├── Supporting evidence
+├── Contradicting evidence
+├── Uncertainty
+├── Remediation
+└── Prevention
 ```
 
-The exact schema can evolve.
-
-The important property is **inspectability**.
+The generated narrative is a presentation of this structure.
 
 ---
 
-# 5. Evidence Strength
+# 3. Root Cause
 
-Not all evidence has equal strength.
+The root cause is the most supported explanation for why the incident occurred.
 
-A conceptual scale could include:
+It should answer:
 
-### Direct
+> **What underlying condition initiated or materially contributed to the observed failure?**
 
-The source directly records the observed event.
-
-Example:
-
-> Deployment system reports version 2.8.1 deployed at 14:29.
-
-### Derived
-
-The observation is deterministically calculated from source data.
+The RCA should distinguish the root cause from symptoms.
 
 Example:
 
-> Error rate increased 18× compared with baseline.
+```text
+Symptom:
+API returned 500 errors.
 
-### Correlated
+Intermediate failure:
+Database connection acquisition failed.
 
-Two independently observed events occur in a relevant relationship.
-
-Example:
-
-> Deployment occurred four minutes before error increase.
-
-### Inferred
-
-The system derives a relationship that is not directly recorded.
-
-Example:
-
-> Deployment likely contributed to connection exhaustion.
-
-The distinction should remain visible where practical.
+Root cause:
+A configuration change reduced the effective database
+connection capacity during a production deployment.
+```
 
 ---
 
-# 6. Evidence and Claims
+# 4. Contributing Factors
 
-Claims should reference supporting evidence.
+Incidents may have multiple contributing factors.
+
+Examples:
+
+* insufficient capacity
+* missing validation
+* incomplete rollout safeguards
+* missing alert
+* inadequate timeout configuration
+* incomplete tracing
+* dependency degradation
+
+Contributing factors should not automatically be promoted to root causes.
+
+---
+
+# 5. Causal Chain
+
+Where sufficient evidence exists, AVENIQ should attempt to represent the causal chain.
+
+Example:
+
+```text
+Configuration change
+        ↓
+Reduced connection capacity
+        ↓
+Connection pool exhaustion
+        ↓
+Database requests fail
+        ↓
+checkout-api errors
+        ↓
+Customer checkout failures
+```
+
+Each transition should ideally have supporting evidence.
+
+---
+
+# 6. Timeline
+
+The RCA should establish a timeline when temporal information is available.
+
+Example:
+
+```text
+14:25 — Configuration change
+14:29 — Deployment begins
+14:30 — Connection utilization increases
+14:32 — Database connection errors begin
+14:33 — API error rate increases
+14:36 — Incident detected
+14:41 — Rollback begins
+14:44 — Error rate returns to baseline
+```
+
+A timeline helps distinguish:
+
+* preceding events
+* symptoms
+* consequences
+* remediation
+
+---
+
+# 7. Blast Radius
+
+The RCA should describe what was affected.
+
+Possible dimensions:
+
+```text
+Services
+Endpoints
+Regions
+Versions
+Requests
+Users
+Business capabilities
+```
+
+The system should not infer a larger blast radius than the evidence supports.
+
+---
+
+# 8. Evidence Attachment
+
+Important RCA claims should reference evidence.
 
 Example:
 
 ```text
 Claim:
-"checkout-api began experiencing database connection failures at 14:32."
+Connection exhaustion caused checkout failures.
 
 Evidence:
-  E1 — application log errors
-  E2 — connection utilization metric
-  E3 — database connection rejection metric
+E17 — connection utilization reached 99%
+E23 — connection acquisition failures increased
+E31 — checkout-api database errors increased
+E44 — rollback restored connection availability
 ```
-
-A claim may have multiple evidence items.
 
 ---
 
-# 7. Evidence Supporting and Contradicting
+# 9. Contradictory Evidence
 
-Evidence should be usable in both directions.
+An RCA should include meaningful contradictory observations.
+
+Example:
+
+> "The same deployment was present in US-East without elevated errors."
+
+This may indicate that the deployment alone was insufficient to cause the incident.
+
+The investigation should therefore consider:
 
 ```text
-Hypothesis:
-Deployment caused connection exhaustion.
-
-Supporting:
-  E1 — configuration changed
-  E2 — connection pool increased
-  E3 — exhaustion began afterward
-
-Contradicting:
-  E4 — identical deployment in another region did not fail
+Deployment
++
+Regional configuration
 ```
 
-This creates a more realistic investigation model than simply collecting evidence that agrees with the first hypothesis.
+rather than simply blaming the deployment.
 
 ---
 
-# 8. Evidence Relationships
+# 10. RCA States
 
-Potential relationships include:
+An RCA may have one of several states:
 
-```text
-supports
-contradicts
-precedes
-follows
-causes? 
-affects
-belongs_to
-originates_from
-correlates_with
-```
+### Confirmed
 
-Importantly, the system should distinguish **observed relationships** from **inferred causal relationships**.
+Strong evidence supports the explanation and meaningful alternatives have been challenged.
 
-For example:
+### Probable
 
-```text
-deployment
-   ──occurred_before──>
-error spike
-```
+The explanation is strongly supported but one or more uncertainties remain.
 
-is different from:
+### Possible
 
-```text
-deployment
-   ──caused──>
-error spike
-```
+The explanation is plausible but evidence is insufficient.
 
-The latter requires stronger evidence.
+### Inconclusive
+
+No hypothesis has sufficient support.
+
+The product should not force an RCA into "confirmed" simply because the user expects an answer.
 
 ---
 
-# 9. Evidence Graph
+# 11. Remediation
 
-Conceptually:
+The RCA may include:
 
-```text
-                    Incident
-                       │
-            ┌──────────┼──────────┐
-            ↓          ↓          ↓
-          Alert      Service    Timeframe
-                       │
-             ┌─────────┼─────────┐
-             ↓         ↓         ↓
-           Logs      Metrics    Traces
-             │         │         │
-             └─────────┼─────────┘
-                       ↓
-                  Observations
-                       ↓
-                   Hypotheses
-                       ↓
-                    Claims
-                       ↓
-                      RCA
-```
+* immediate mitigation
+* permanent fix
+* rollback
+* configuration correction
+* capacity change
+* instrumentation improvement
 
-This does not require a graph database.
-
-It represents the logical relationships required by the product.
+Remediation should be distinguished from cause.
 
 ---
 
-# 10. Evidence Coverage
+# 12. Prevention
 
-An RCA should ideally have evidence covering multiple relevant dimensions.
-
-For example:
-
-```text
-Temporal evidence
-    +
-Service evidence
-    +
-Telemetry evidence
-    +
-Change evidence
-    +
-Impact evidence
-```
-
-A single error log should generally not be treated as sufficient evidence for a system-level RCA.
-
----
-
-# 11. Evidence Gaps
-
-The absence of evidence should be represented explicitly.
+The RCA can identify measures that reduce recurrence.
 
 Examples:
 
-> "Distributed tracing unavailable for this service."
-
-> "No deployment metadata available."
-
-> "User-region information unavailable."
-
-Evidence gaps are themselves valuable because they identify limitations in the investigation.
-
----
-
-# 12. Evidence Freshness
-
-Evidence may change in relevance over time.
-
-The model should preserve:
-
-* event time
-* retrieval time
-* source update time where applicable
-
-This matters because an investigation may continue after an incident has been resolved.
+* new alert
+* better trace propagation
+* deployment validation
+* capacity safeguards
+* integration tests
+* configuration validation
+* runbook update
 
 ---
 
-# 13. Evidence Confidence vs Model Confidence
+# 13. Observability Lessons
 
-AVENIQ should avoid reducing evidence quality to a single model confidence score.
+A special section should answer:
 
-Instead:
+> **What could have made this incident easier to detect or investigate?**
+
+Examples:
+
+* missing metric
+* missing correlation ID
+* incomplete trace propagation
+* insufficient deployment metadata
+* missing region labels
+* misleading dashboard
+* alert fired too late
+* no alert at all
+
+This connects incident investigation with observability improvement.
+
+---
+
+# 14. RCA Quality Principle
+
+A good AVENIQ RCA should allow an engineer to move backward:
 
 ```text
-Evidence quality
-    +
-Evidence coverage
-    +
-Source reliability
-    +
-Temporal consistency
-    +
-Cross-source agreement
-    +
-Contradictions
-```
-
-can contribute to an overall assessment of how strongly a conclusion is supported.
-
-The exact scoring model should be established experimentally.
-
----
-
-# 14. Evidence as the Foundation of Generated Artifacts
-
-The same evidence model should support:
-
-```text
-Evidence
-   ↓
-Investigation
-   ↓
 RCA
-   ↓
-Incident report
-   ↓
-Knowledge article
+ ↓
+Claim
+ ↓
+Evidence
+ ↓
+Source
+ ↓
+Original observation
 ```
 
-This avoids a situation where the RCA is generated from one context and the postmortem is separately generated from another.
+If that path cannot be followed, the RCA should be treated as weaker.
 
 ---
 
 # 15. Core Principle
 
-The desired relationship is:
-
-> **Every important conclusion should have an inspectable path back to the evidence from which it was derived.**
-
-AVENIQ should make it possible for an engineer to ask:
-
-> **"Why does the system believe this?"**
-
-and receive not merely a confidence score, but the relevant evidence and relationships.
+> **An RCA is not merely an answer. It is an evidence-backed explanation of an incident.**

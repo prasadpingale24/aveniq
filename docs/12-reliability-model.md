@@ -1,297 +1,273 @@
-# AVENIQ — RCA Model
+# AVENIQ — Reliability Model
 
 ## 1. Purpose
 
-The RCA model defines how AVENIQ represents and communicates a root cause analysis.
+Reliability is a foundational product requirement for AVENIQ.
 
-The objective is not to produce the shortest possible explanation.
+The system operates in a context where incorrect conclusions can waste engineering time or cause inappropriate remediation.
 
-The objective is to produce an explanation that is:
+Therefore:
 
-* evidence-backed
-* causally plausible
-* inspectable
-* appropriately scoped
-* explicit about uncertainty
+> **AVENIQ should optimize for trustworthy investigation rather than impressive AI answers.**
 
 ---
 
-# 2. RCA Is a Structured Explanation
+# 2. What Reliability Means
 
-An RCA should not be treated as a single text string.
+Reliability does not mean:
 
-Conceptually:
+> "The AI always knows the answer."
+
+Instead, reliability means:
+
+> **The system behaves appropriately given the quality and availability of evidence.**
+
+That includes knowing when it does not know.
+
+---
+
+# 3. Desired Reliability Behavior
 
 ```text
-RCA
-├── Summary
-├── Root cause
-├── Contributing factors
-├── Timeline
-├── Affected components
-├── Blast radius
-├── Supporting evidence
-├── Contradicting evidence
-├── Uncertainty
-├── Remediation
-└── Prevention
+Strong evidence
+      ↓
+Strong conclusion
+
+Partial evidence
+      ↓
+Probable hypothesis + explicit uncertainty
+
+Conflicting evidence
+      ↓
+Multiple hypotheses + investigation
+
+Insufficient evidence
+      ↓
+Question / evidence request
+
+No useful evidence
+      ↓
+Inconclusive investigation
 ```
 
-The generated narrative is a presentation of this structure.
+This behavior is preferable to generating a definitive answer in every situation.
 
 ---
 
-# 3. Root Cause
+# 4. Reliability Dimensions
 
-The root cause is the most supported explanation for why the incident occurred.
+AVENIQ should eventually evaluate reliability across several dimensions.
 
-It should answer:
+## 4.1 Evidence Correctness
 
-> **What underlying condition initiated or materially contributed to the observed failure?**
+Did the system retrieve and represent evidence correctly?
 
-The RCA should distinguish the root cause from symptoms.
+---
 
-Example:
+## 4.2 Evidence Relevance
+
+Was the evidence actually relevant to the incident?
+
+---
+
+## 4.3 Evidence Coverage
+
+Did the investigation examine enough relevant dimensions?
+
+For example:
 
 ```text
-Symptom:
-API returned 500 errors.
-
-Intermediate failure:
-Database connection acquisition failed.
-
-Root cause:
-A configuration change reduced the effective database
-connection capacity during a production deployment.
-```
-
----
-
-# 4. Contributing Factors
-
-Incidents may have multiple contributing factors.
-
-Examples:
-
-* insufficient capacity
-* missing validation
-* incomplete rollout safeguards
-* missing alert
-* inadequate timeout configuration
-* incomplete tracing
-* dependency degradation
-
-Contributing factors should not automatically be promoted to root causes.
-
----
-
-# 5. Causal Chain
-
-Where sufficient evidence exists, AVENIQ should attempt to represent the causal chain.
-
-Example:
-
-```text
-Configuration change
-        ↓
-Reduced connection capacity
-        ↓
-Connection pool exhaustion
-        ↓
-Database requests fail
-        ↓
-checkout-api errors
-        ↓
-Customer checkout failures
-```
-
-Each transition should ideally have supporting evidence.
-
----
-
-# 6. Timeline
-
-The RCA should establish a timeline when temporal information is available.
-
-Example:
-
-```text
-14:25 — Configuration change
-14:29 — Deployment begins
-14:30 — Connection utilization increases
-14:32 — Database connection errors begin
-14:33 — API error rate increases
-14:36 — Incident detected
-14:41 — Rollback begins
-14:44 — Error rate returns to baseline
-```
-
-A timeline helps distinguish:
-
-* preceding events
-* symptoms
-* consequences
-* remediation
-
----
-
-# 7. Blast Radius
-
-The RCA should describe what was affected.
-
-Possible dimensions:
-
-```text
-Services
-Endpoints
-Regions
-Versions
-Requests
-Users
-Business capabilities
-```
-
-The system should not infer a larger blast radius than the evidence supports.
-
----
-
-# 8. Evidence Attachment
-
-Important RCA claims should reference evidence.
-
-Example:
-
-```text
-Claim:
-Connection exhaustion caused checkout failures.
-
-Evidence:
-E17 — connection utilization reached 99%
-E23 — connection acquisition failures increased
-E31 — checkout-api database errors increased
-E44 — rollback restored connection availability
-```
-
----
-
-# 9. Contradictory Evidence
-
-An RCA should include meaningful contradictory observations.
-
-Example:
-
-> "The same deployment was present in US-East without elevated errors."
-
-This may indicate that the deployment alone was insufficient to cause the incident.
-
-The investigation should therefore consider:
-
-```text
-Deployment
+Service
 +
-Regional configuration
+Dependency
++
+Change
++
+Telemetry
++
+Impact
 ```
 
-rather than simply blaming the deployment.
+---
+
+## 4.4 Temporal Consistency
+
+Do the proposed causal relationships make sense chronologically?
+
+A cause generally cannot occur after its effect.
 
 ---
 
-# 10. RCA States
+## 4.5 Cross-Source Consistency
 
-An RCA may have one of several states:
+Do independent sources agree?
 
-### Confirmed
-
-Strong evidence supports the explanation and meaningful alternatives have been challenged.
-
-### Probable
-
-The explanation is strongly supported but one or more uncertainties remain.
-
-### Possible
-
-The explanation is plausible but evidence is insufficient.
-
-### Inconclusive
-
-No hypothesis has sufficient support.
-
-The product should not force an RCA into "confirmed" simply because the user expects an answer.
-
----
-
-# 11. Remediation
-
-The RCA may include:
-
-* immediate mitigation
-* permanent fix
-* rollback
-* configuration correction
-* capacity change
-* instrumentation improvement
-
-Remediation should be distinguished from cause.
-
----
-
-# 12. Prevention
-
-The RCA can identify measures that reduce recurrence.
-
-Examples:
-
-* new alert
-* better trace propagation
-* deployment validation
-* capacity safeguards
-* integration tests
-* configuration validation
-* runbook update
-
----
-
-# 13. Observability Lessons
-
-A special section should answer:
-
-> **What could have made this incident easier to detect or investigate?**
-
-Examples:
-
-* missing metric
-* missing correlation ID
-* incomplete trace propagation
-* insufficient deployment metadata
-* missing region labels
-* misleading dashboard
-* alert fired too late
-* no alert at all
-
-This connects incident investigation with observability improvement.
-
----
-
-# 14. RCA Quality Principle
-
-A good AVENIQ RCA should allow an engineer to move backward:
+For example:
 
 ```text
-RCA
- ↓
-Claim
- ↓
-Evidence
- ↓
-Source
- ↓
-Original observation
+Logs:
+connection failures ↑
+
+Metrics:
+connection utilization ↑
+
+Deployment:
+configuration changed
 ```
 
-If that path cannot be followed, the RCA should be treated as weaker.
+Agreement increases support for a hypothesis.
 
 ---
 
-# 15. Core Principle
+## 4.6 Contradiction Handling
 
-> **An RCA is not merely an answer. It is an evidence-backed explanation of an incident.**
+Does the system actively recognize evidence that challenges its hypothesis?
+
+---
+
+## 4.7 RCA Correctness
+
+Did the final RCA correctly identify the actual cause?
+
+---
+
+## 4.8 Investigation Efficiency
+
+How much time and manual effort did AVENIQ save?
+
+Correctness without useful efficiency improvement would limit the product's value.
+
+---
+
+# 5. Reliability Is Not One Number
+
+A single "AI confidence: 94%" value is insufficient.
+
+A richer representation might look like:
+
+```text
+Evidence coverage       High
+Source agreement        High
+Temporal consistency    High
+Contradictions          Low
+Missing telemetry       Medium
+RCA status              Probable
+```
+
+The exact scoring system should be determined through experimentation.
+
+---
+
+# 6. Evidence Quality Levels
+
+A conceptual evidence classification:
+
+| Level          | Meaning                            |
+| -------------- | ---------------------------------- |
+| Direct         | Directly observed from a source    |
+| Derived        | Deterministically calculated       |
+| Correlated     | Multiple observations align        |
+| Inferred       | Relationship proposed by reasoning |
+| Human-provided | Supplied by an operator            |
+
+These should not be silently treated as equivalent.
+
+---
+
+# 7. Safe Failure
+
+A critical reliability feature is graceful failure.
+
+If AVENIQ cannot establish an RCA, it should still provide:
+
+* collected evidence
+* investigation timeline
+* investigated hypotheses
+* evidence gaps
+* unresolved questions
+* suggested next actions
+
+For example:
+
+```text
+No confirmed RCA.
+
+Most likely:
+Database connection exhaustion.
+
+Supporting evidence:
+...
+
+Missing evidence:
+No deployment configuration history available.
+
+Next recommended investigation:
+Inspect database connection configuration.
+```
+
+This is still valuable.
+
+---
+
+# 8. Human Escalation
+
+AVENIQ should escalate when:
+
+* hypotheses remain indistinguishable
+* evidence conflicts
+* required information is unavailable
+* the investigation reaches a high-risk decision
+* the agent cannot confidently select the next action
+
+The human becomes another investigation participant rather than merely an approval gate.
+
+---
+
+# 9. Reliability Boundary
+
+The MVP should establish explicit boundaries around autonomous behavior.
+
+For example:
+
+### Allowed
+
+* retrieve telemetry
+* correlate evidence
+* investigate hypotheses
+* generate summaries
+* ask questions
+
+### Restricted
+
+* modify production configuration
+* deploy code
+* delete resources
+* execute destructive commands
+
+The investigation system should initially remain primarily **read-oriented**.
+
+---
+
+# 10. Measuring Reliability
+
+Future evaluation should include benchmark incidents where the correct RCA is known.
+
+Potential metrics:
+
+```text
+RCA accuracy
+Evidence precision
+Evidence recall
+False RCA rate
+Unsupported claim rate
+Investigation completion rate
+Human intervention rate
+Time to useful context
+Time to correct RCA
+```
+
+---
+
+# 11. Reliability Principle
+
+> **When AVENIQ cannot confidently establish the truth, it should establish what is known, what is unknown, and what evidence would reduce the uncertainty.**

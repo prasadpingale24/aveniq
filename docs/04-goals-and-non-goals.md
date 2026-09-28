@@ -1,301 +1,188 @@
-# AVENIQ — Product Vision
+# AVENIQ — Goals and Non-Goals
 
-## 1. Vision
+## 1. Goals
 
-> **Make production incident investigation evidence-driven, contextual, and dramatically easier to navigate.**
+### G1 — Reduce investigation context switching
 
-AVENIQ aims to help engineers move from:
-
-```text
-"What is broken?"
-```
-
-toward:
-
-```text
-"What happened?"
-        ↓
-"What evidence do we have?"
-        ↓
-"How are the signals connected?"
-        ↓
-"What is the likely cause?"
-        ↓
-"What evidence supports or contradicts it?"
-        ↓
-"What was affected?"
-        ↓
-"Has the hypothesis been validated?"
-        ↓
-"What should we learn from this?"
-```
-
-The goal is not to make humans disappear from incident response.
-
-The goal is to make humans **far more effective at investigation**.
+Help engineers investigate an incident without manually jumping between multiple observability surfaces for every investigative step.
 
 ---
 
-## 2. Product Philosophy
+### G2 — Aggregate incident-relevant context
 
-### Evidence before confidence
+Collect relevant evidence from available operational sources into a coherent incident context.
 
-AVENIQ should prefer:
+The objective is not to collect everything.
 
-> "Here are the observations supporting this hypothesis."
-
-over:
-
-> "I am 94% confident this is the root cause."
-
-Confidence can be useful, but it should not substitute for evidence.
+The objective is to identify and preserve what is relevant.
 
 ---
 
-### Context before conclusions
+### G3 — Produce evidence-backed hypotheses
 
-The system should first establish enough incident context to reason meaningfully.
-
-A single error message should not automatically become an RCA.
+AVENIQ should be capable of generating probable explanations while explicitly connecting those explanations to supporting evidence.
 
 ---
 
-### Investigation before automation
+### G4 — Make evidence inspectable
 
-Automation should emerge from understanding the investigation workflow.
+An engineer should be able to understand:
 
-The project should not automate a workflow merely because an agent can technically perform it.
-
----
-
-### Assist existing systems
-
-AVENIQ should consume existing operational data rather than attempt to become another all-purpose observability platform.
+* what was observed
+* where it came from
+* when it occurred
+* how it relates to the incident
+* whether it supports or contradicts a hypothesis
 
 ---
 
-### Uncertainty is a valid result
+### G5 — Support incomplete observability
 
-If evidence is insufficient, the system should say so.
+The system should remain useful when:
 
-A partial investigation with explicit uncertainty is preferable to a fabricated certainty.
+* tracing is unavailable
+* trace propagation is incomplete
+* logs are sparse
+* metrics are missing
+* integrations provide incomplete context
 
----
-
-## 3. Product Concept
-
-AVENIQ can be thought of as an **incident investigation workspace**.
-
-A high-level interaction might look like:
-
-```text
-Incident / Alert
-      ↓
-AVENIQ builds initial context
-      ↓
-Agents inspect available evidence
-      ↓
-Evidence is correlated
-      ↓
-Hypotheses are formed
-      ↓
-Hypotheses are verified / challenged
-      ↓
-Human is asked when necessary
-      ↓
-Incident context evolves
-      ↓
-Evidence-backed RCA
-      ↓
-Impact + blast radius
-      ↓
-Report / knowledge
-```
-
-The interface should reflect this evolving investigation rather than presenting a static collection of dashboards.
+It should degrade gracefully rather than assume perfect instrumentation.
 
 ---
 
-## 4. The Incident as the Primary Object
+### G6 — Enable iterative investigation
 
-AVENIQ should treat an **incident** as the primary investigation object.
+Investigation should be allowed to evolve over multiple conversational turns.
 
-An incident can contain:
+The system should be able to:
 
-* triggering alert
-* timeframe
-* affected services
-* relevant telemetry
-* observed symptoms
-* entities
-* changes
-* hypotheses
-* evidence
-* contradictions
-* human answers
-* investigation actions
-* RCA
-* impact
-* remediation
-* resolution verification
-* generated knowledge
-
-This provides a common context across agents and UI components.
+* ask questions
+* revise hypotheses
+* request additional evidence
+* incorporate human answers
+* explicitly record uncertainty
 
 ---
 
-## 5. The Evidence Trail
+### G7 — Reduce post-resolution work
 
-Every important conclusion should ideally be traceable to evidence.
+Where sufficient context exists, AVENIQ should assist with:
 
-For example:
-
-```text
-RCA:
-Database connection pool exhaustion
-
-Supporting evidence:
-  ├── Metric: connection utilization
-  ├── Metric: rejected connections
-  ├── Logs: connection acquisition failures
-  ├── Service: checkout-api
-  ├── Time: 14:32–14:38
-  └── Deployment: checkout-api v2.8.1
-
-Contradicting evidence:
-  └── None identified
-
-Confidence:
-  └── Derived from evidence quality, not merely model probability
-```
-
-The exact implementation remains an engineering decision.
-
-The conceptual requirement is that an engineer can inspect **why** AVENIQ reached a conclusion.
+* incident reports
+* RCA summaries
+* timelines
+* knowledge articles
+* observability improvement recommendations
 
 ---
 
-## 6. The Adaptive Interface
+### G8 — Adapt the incident view
 
-The UI should not attempt to display everything.
-
-Instead, it should answer:
-
-> **What does this person need to understand this incident right now?**
-
-An engineer might receive:
-
-```text
-Timeline
-Service dependency graph
-Error clusters
-Relevant logs
-Metrics
-Trace relationships
-Deployment diff
-Evidence
-RCA hypothesis
-```
-
-A stakeholder might receive:
-
-```text
-Incident summary
-Duration
-Affected users
-Regions
-Business capability
-Impact
-Resolution
-```
-
-Both views should originate from the same incident context.
-
-This is the role of the generative UI layer.
+Generate incident views appropriate to the user's role and current investigative needs.
 
 ---
 
-## 7. Agentic Behavior
+### G9 — Integrate rather than replace
 
-AVENIQ's agents should behave more like investigators than chatbots.
-
-An investigation might involve:
-
-```text
-Agent:
-"The API error rate increased at 14:32."
-
-Agent:
-"I found a deployment at 14:29."
-
-Agent:
-"The deployment changed database connection configuration."
-
-Agent:
-"I need to determine whether connection exhaustion occurred."
-
-Agent:
-"Metric evidence confirms connection utilization reached 99%."
-
-Agent:
-"Logs show acquisition failures beginning at 14:32."
-
-Agent:
-"Evidence supports the deployment → configuration → exhaustion hypothesis."
-```
-
-If the available evidence is insufficient:
-
-```text
-Agent:
-"I found two plausible causes.
-
-I need to know whether the affected requests were
-restricted to the EU region.
-
-Can you confirm?"
-```
-
-This conversational investigation model is intentional.
+AVENIQ should work with existing observability and operational systems.
 
 ---
 
-## 8. Long-Term Vision
+### G10 — Evaluate reliability explicitly
 
-If the concept proves valuable, AVENIQ could evolve from an incident investigation assistant into a broader operational intelligence layer:
-
-```text
-Detection
-   ↓
-Investigation
-   ↓
-Resolution
-   ↓
-Verification
-   ↓
-Postmortem
-   ↓
-Knowledge
-   ↓
-Observability improvement
-   ↓
-Prevention
-```
-
-The long-term opportunity is therefore not simply reducing MTTR.
-
-It is creating a feedback loop where incidents improve the system's future observability and engineering practices.
+The system should be evaluated on evidence quality and investigation usefulness, not merely response fluency.
 
 ---
 
-## 9. The Product North Star
+# 2. Non-Goals
 
-The strongest north-star question is:
+## NG1 — Replace observability platforms
 
-> **Can an engineer understand an unfamiliar production incident faster because AVENIQ reconstructed the relevant context and showed the evidence behind its conclusions?**
+AVENIQ is not intended to become a replacement for systems such as logging, metrics, tracing, APM, infrastructure monitoring, or incident management.
 
-Everything else should support this question.
+---
 
-Agents, MCP, generative UI, connectors, reports, and knowledge articles are mechanisms.
+## NG2 — Build another static dashboard
 
-They are not the product's fundamental purpose.
+The project should not simply recreate conventional observability dashboards behind a different interface.
+
+---
+
+## NG3 — Guarantee autonomous RCA
+
+AVENIQ should not claim that every incident can be automatically diagnosed.
+
+---
+
+## NG4 — Hide uncertainty
+
+The system should not suppress missing evidence or uncertainty to make the output appear more confident.
+
+---
+
+## NG5 — Automatically deploy production fixes
+
+Production remediation automation is outside the initial scope.
+
+The investigation system may recommend or assist with remediation, but autonomous production deployment introduces a substantially different safety boundary.
+
+---
+
+## NG6 — Depend exclusively on distributed tracing
+
+Tracing is valuable but should be treated as one evidence source among many.
+
+---
+
+## NG7 — Collect unlimited telemetry
+
+AVENIQ should not indiscriminately ingest or retain all available operational data.
+
+Relevant data acquisition should be driven by investigation needs.
+
+---
+
+## NG8 — Become a generic AI assistant
+
+The system should remain focused on production incident investigation and its directly related workflows.
+
+---
+
+## NG9 — Optimize solely for MTTR
+
+MTTR reduction is an important outcome, but optimizing for speed at the expense of correctness is unacceptable.
+
+A faster incorrect RCA is not a successful investigation.
+
+---
+
+## NG10 — Replace human judgment
+
+The system should augment engineering judgment.
+
+Human intervention remains an intentional part of the design when evidence is insufficient, ambiguous, contradictory, or high-risk.
+
+---
+
+# 3. MVP Boundary
+
+The first MVP should primarily answer:
+
+> **Can AVENIQ reconstruct useful incident context from multiple sources and help an engineer reach a better-supported RCA faster?**
+
+Features that do not contribute meaningfully to this question should be deferred.
+
+---
+
+# 4. Success Boundary
+
+AVENIQ should be considered successful only if experiments demonstrate measurable improvement in one or more of:
+
+* investigation time
+* context switching
+* evidence coverage
+* RCA correctness
+* engineer effort
+* post-incident documentation effort
+
+while maintaining acceptable reliability.

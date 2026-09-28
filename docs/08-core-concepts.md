@@ -1,257 +1,398 @@
-# AVENIQ — Requirements
+# AVENIQ — Core Concepts
 
 ## 1. Purpose
 
-This document defines the functional and non-functional requirements for AVENIQ.
+This document establishes the vocabulary and conceptual model used throughout AVENIQ.
 
-Requirements are intentionally expressed independently of a specific implementation so that architecture decisions can evolve without redefining the product.
+The purpose is to prevent implementation concepts from becoming confused with product concepts.
 
 ---
 
-# 2. Functional Requirements
+# 2. Incident
 
-## FR-01 — Create an Investigation
+An **Incident** is the primary object being investigated.
 
-AVENIQ shall allow an investigation to be initiated from:
+It represents an operational event or suspected operational problem requiring investigation.
+
+An incident may originate from:
 
 * an alert
-* an incident
-* a manually supplied symptom
-* a user question
+* a monitoring anomaly
+* a user report
+* an engineer observation
+* a manually initiated investigation
+
+An incident does not necessarily imply that the root cause is already known.
 
 ---
 
-## FR-02 — Establish an Investigation Context
+# 3. Incident Context
 
-The system shall maintain contextual information including, where available:
+**Incident Context** is the accumulated representation of everything currently known or relevant to an investigation.
 
-* incident timeframe
-* environment
-* services
-* alerts
-* telemetry
-* changes
-* dependencies
-* affected entities
-* user-provided information
+It may contain:
 
----
+```text
+Incident
+├── timeframe
+├── symptoms
+├── entities
+├── evidence
+├── relationships
+├── hypotheses
+├── questions
+├── human inputs
+├── actions
+├── impact
+├── remediation
+└── resolution state
+```
 
-## FR-03 — Acquire Evidence
-
-The system shall be able to retrieve relevant evidence from connected data sources.
-
-Evidence acquisition should be driven by investigation needs rather than indiscriminate retrieval.
-
----
-
-## FR-04 — Correlate Evidence
-
-The system shall associate evidence with relevant:
-
-* services
-* requests
-* deployments
-* infrastructure
-* timestamps
-* regions
-* environments
-* incidents
-
-where such relationships can be established.
+Incident context evolves throughout the investigation.
 
 ---
 
-## FR-05 — Preserve Evidence Provenance
+# 4. Signal
 
-Evidence should retain enough provenance to determine:
+A **Signal** is an indication that something may be relevant to an incident.
 
-* source
-* retrieval context
-* timestamp
-* relevant entity
-* original observation where appropriate
+Examples:
 
----
+* alert
+* metric anomaly
+* log pattern
+* trace error
+* deployment event
+* user report
 
-## FR-06 — Generate Hypotheses
-
-The system shall be capable of generating one or more candidate explanations based on available evidence.
-
----
-
-## FR-07 — Verify Hypotheses
-
-The system shall attempt to find evidence that supports or contradicts candidate explanations.
+A signal is not necessarily evidence of root cause.
 
 ---
 
-## FR-08 — Represent Uncertainty
+# 5. Evidence
 
-The system shall distinguish between:
+**Evidence** is an observed or externally supplied piece of information that can be used to support or challenge an investigative claim.
 
-* observed facts
-* inferred relationships
-* hypotheses
-* unresolved questions
-* human-provided information
+Examples:
+
+* metric observation
+* log event
+* trace span
+* deployment record
+* configuration change
+* infrastructure event
+* human confirmation
+
+Evidence should have provenance.
 
 ---
 
-## FR-09 — Ask Human Questions
+# 6. Observation
 
-The system shall be able to request clarification when available evidence is insufficient or ambiguous.
+An **Observation** is what the system can directly establish from an evidence source.
+
+Example:
+
+> "checkout-api error rate increased from 0.2% to 18% between 14:31 and 14:34."
+
+This is different from:
+
+> "The deployment caused the incident."
+
+The first is an observation.
+
+The second is a hypothesis or conclusion.
 
 ---
 
-## FR-10 — Maintain Investigation History
+# 7. Relationship
 
-The investigation shall retain:
+A **Relationship** connects entities or evidence.
 
-* actions
+Examples:
+
+```text
+deployment
+   ↓
+service
+
+service
+   ↓
+database
+
+error
+   ↓
+request
+
+request
+   ↓
+user region
+```
+
+Relationships may be:
+
+* explicitly provided by a source
+* deterministically derived
+* inferred
+
+The distinction should be preserved where relevant.
+
+---
+
+# 8. Hypothesis
+
+A **Hypothesis** is a proposed explanation for observed behavior.
+
+A hypothesis should not automatically become the RCA.
+
+It must be evaluated against available evidence.
+
+---
+
+# 9. Claim
+
+A **Claim** is a statement made during an investigation.
+
+Examples:
+
+* "The checkout API began failing at 14:32."
+* "A deployment occurred three minutes before the failure."
+* "The deployment changed database configuration."
+* "The configuration change contributed to connection exhaustion."
+
+Claims can have different evidence strength.
+
+---
+
+# 10. Verification
+
+**Verification** is the process of determining whether a claim or hypothesis is sufficiently supported by available evidence.
+
+Verification may involve:
+
+* retrieving additional evidence
+* comparing time windows
+* checking dependencies
+* finding contradictory observations
+* asking a human
+* reproducing a condition
+
+---
+
+# 11. Investigation
+
+An **Investigation** is the sequence through which AVENIQ gathers context, asks questions, evaluates hypotheses, and develops an explanation for an incident.
+
+Conceptually:
+
+```text
+Question
+   ↓
+Action
+   ↓
+Observation
+   ↓
+New question
+   ↓
+Evidence
+   ↓
+Hypothesis
+   ↓
+Verification
+   ↓
+Conclusion
+```
+
+---
+
+# 12. Evidence Graph
+
+The **Evidence Graph** represents relationships among:
+
 * evidence
+* entities
+* observations
+* claims
 * hypotheses
-* user responses
-* agent reasoning artifacts appropriate for inspection
-* conclusions
-* unresolved questions
+* incident context
+
+It is a conceptual model rather than necessarily a literal graph database.
 
 ---
 
-## FR-11 — Generate an RCA
+# 13. RCA
 
-AVENIQ shall produce an RCA representation containing evidence supporting the conclusion.
+**Root Cause Analysis (RCA)** is the resulting explanation of why the incident occurred.
+
+An AVENIQ RCA should ideally include:
+
+* primary cause
+* contributing factors
+* evidence
+* impact
+* uncertainty
+* remediation
 
 ---
 
-## FR-12 — Represent Impact
+# 14. Blast Radius
 
-Where evidence permits, the system shall describe impact across relevant dimensions such as:
+**Blast Radius** describes the scope of impact associated with an incident.
+
+It may include:
 
 * services
 * endpoints
 * regions
 * users
+* requests
 * business capabilities
 
----
-
-## FR-13 — Generate Incident Artifacts
-
-The system should be capable of generating:
-
-* incident report
-* timeline
-* RCA summary
-* knowledge article
-* observability recommendations
+Blast radius should be evidence-derived where possible.
 
 ---
 
-## FR-14 — Generate Adaptive UI
+# 15. Investigation State
 
-The system shall be capable of producing an incident view based on:
+An investigation has a changing state.
 
-* incident state
-* investigation needs
-* user role
-* available evidence
+A conceptual state model:
 
----
+```text
+Initialized
+    ↓
+Context Gathering
+    ↓
+Investigating
+    ↓
+Hypothesis Formation
+    ↓
+Verification
+    ↓
+Human Clarification ──┐
+    ↓                 │
+    └─────────────────┘
+    ↓
+RCA Candidate
+    ↓
+Resolution Verification
+    ↓
+Resolved
+    ↓
+Post-Incident
+```
 
-## FR-15 — Support Multiple Data Sources
-
-The system shall support data sources through connectors or MCP-compatible interfaces where appropriate.
-
----
-
-# 3. Non-Functional Requirements
-
-## NFR-01 — Reliability
-
-The system should prioritize correctness and evidence quality over response speed.
-
----
-
-## NFR-02 — Explainability
-
-Important conclusions should be inspectable through their supporting evidence.
-
----
-
-## NFR-03 — Graceful Degradation
-
-The system should remain useful when individual evidence sources are unavailable.
+The actual state machine may evolve during implementation.
 
 ---
 
-## NFR-04 — Observability
+# 16. Agent
 
-AVENIQ itself should expose sufficient telemetry to diagnose failures in its investigation workflow.
+An **Agent** is an autonomous system component capable of deciding investigation actions within a defined responsibility and tool boundary.
 
----
+An agent is not equivalent to an LLM response.
 
-## NFR-05 — Security
+An agent can:
 
-Connected operational data must be accessed using appropriate authentication, authorization, and least-privilege principles.
-
----
-
-## NFR-06 — Data Isolation
-
-Evidence belonging to one environment, organization, or investigation must not unintentionally leak into another context.
-
----
-
-## NFR-07 — Auditability
-
-Important agent actions and external data access should be auditable.
+* inspect context
+* select tools
+* retrieve evidence
+* evaluate results
+* decide next actions
+* ask questions
+* update investigation state
 
 ---
 
-## NFR-08 — Extensibility
+# 17. Tool
 
-New data sources should be integrable without redesigning the investigation model.
+A **Tool** is an operation an agent can invoke.
 
----
+Examples:
 
-## NFR-09 — Human Control
+* query logs
+* query metrics
+* retrieve traces
+* inspect deployments
+* inspect service metadata
 
-Users must be able to inspect, challenge, redirect, or stop an investigation.
-
----
-
-## NFR-10 — Performance
-
-The system should provide useful initial context quickly while allowing deeper investigation to continue asynchronously.
+MCP may provide one mechanism for exposing such tools.
 
 ---
 
-# 4. MVP Requirements
+# 18. Connector
 
-The first MVP should prioritize:
+A **Connector** provides access to an external operational system.
 
-1. investigation creation
-2. multiple evidence sources
-3. evidence normalization
-4. evidence provenance
-5. agent-driven investigation
-6. hypothesis generation
-7. evidence-backed RCA
-8. human questioning
-9. basic adaptive incident UI
+Examples may include:
 
-Post-incident generation can initially be simpler than the core investigation workflow.
+* observability platforms
+* source-control systems
+* deployment systems
+* incident-management systems
+
+AVENIQ should conceptually separate the connector from the investigation logic.
 
 ---
 
-# 5. Requirement Priority
+# 19. Generative UI
 
-| Priority | Meaning                                      |
-| -------- | -------------------------------------------- |
-| P0       | Essential to validate the product hypothesis |
-| P1       | Important for a usable MVP                   |
-| P2       | Valuable enhancement                         |
-| P3       | Future exploration                           |
+**Generative UI** is the ability to dynamically construct an interface based on the current investigation context and user needs.
 
-The priority of individual requirements should be revised as experiments produce evidence.
+It should not mean arbitrary AI-generated HTML.
+
+The intended concept is:
+
+```text
+Incident context
+      +
+User perspective
+      +
+Investigation state
+      ↓
+Relevant UI composition
+```
+
+---
+
+# 20. Knowledge
+
+**Knowledge** is reusable information derived from resolved incidents.
+
+Examples:
+
+* known failure patterns
+* diagnostic procedures
+* observability lessons
+* remediation patterns
+* prevention recommendations
+
+Knowledge should preserve its relationship to the incident evidence from which it was derived.
+
+---
+
+# 21. Core Principle
+
+The conceptual hierarchy of AVENIQ is:
+
+```text
+Signals
+   ↓
+Evidence
+   ↓
+Context
+   ↓
+Investigation
+   ↓
+Hypotheses
+   ↓
+Verification
+   ↓
+RCA
+   ↓
+Knowledge
+```
+
+AI and agents operate **within this system**.
+
+They are not the system itself.
