@@ -1,0 +1,2 @@
+{"timestamp": "2026-09-28T14:30:00Z", "service": "checkout-api", "metric": "db.pool.utilization", "value": 0.99, "unit": "ratio"}
+{"timestamp": "2026-09-28T14:31:00Z", "service": "checkout-api", "metric": "db.pool.utilization", "value": 0.97, "unit": "ratio"}

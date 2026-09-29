@@ -1,0 +1,27 @@
+benchmark_id: b03
+title: Database connection exhaustion
+environment: production
+primary_service: checkout-api
+incident_window:
+  start: "2026-09-28T14:28:00Z"
+  end: "2026-09-28T14:45:00Z"
+alert:
+  id: alert-b03-001
+  fired_at: "2026-09-28T14:36:00Z"
+  name: checkout-api error rate high
+  condition: error_rate > 0.10
+  service: checkout-api
+  severity: critical
+deployment:
+  id: dep-b03-001
+  service: checkout-api
+  version: "2.8.1"
+  started_at: "2026-09-28T14:29:00Z"
+  config_changes:
+    - key: database.pool.max_size
+      old_value: "50"
+      new_value: "5"
+ground_truth:
+  root_cause_summary: >-
+    Production deployment reduced database connection pool capacity, causing pool exhaustion.
+  expected_rca_status: probable

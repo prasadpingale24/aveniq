@@ -1,0 +1,11 @@
+{
+  "fixture_package_version": "1.0",
+  "benchmark_id": "b03",
+  "title": "Database connection exhaustion",
+  "incident_window": {
+    "start": "2026-09-28T14:28:00Z",
+    "end": "2026-09-28T14:45:00Z"
+  },
+  "environment": "production",
+  "primary_service": "checkout-api"
+}

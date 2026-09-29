@@ -1,0 +1,15 @@
+[
+  {
+    "id": "dep-b03-001",
+    "service": "checkout-api",
+    "version": "2.8.1",
+    "started_at": "2026-09-28T14:29:00Z",
+    "config_changes": [
+      {
+        "key": "database.pool.max_size",
+        "old_value": "50",
+        "new_value": "5"
+      }
+    ]
+  }
+]

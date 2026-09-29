@@ -1,0 +1,2 @@
+{"timestamp": "2026-09-28T14:32:00Z", "service": "checkout-api", "level": "ERROR", "message": "Failed to acquire database connection", "attributes": {"error_type": "PoolExhausted"}}
+{"timestamp": "2026-09-28T14:33:00Z", "service": "checkout-api", "level": "ERROR", "message": "Failed to acquire database connection", "attributes": {"error_type": "PoolExhausted"}}

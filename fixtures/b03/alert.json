@@ -1,0 +1,8 @@
+{
+  "id": "alert-b03-001",
+  "fired_at": "2026-09-28T14:36:00Z",
+  "name": "checkout-api error rate high",
+  "condition": "error_rate > 0.10",
+  "service": "checkout-api",
+  "severity": "critical"
+}

@@ -1,0 +1,23 @@
+{
+  "benchmark_id": "b03",
+  "root_cause_summary": "Production deployment reduced database connection pool capacity, causing pool exhaustion.",
+  "root_cause_category": "configuration_change",
+  "expected_rca_status": "probable",
+  "expected_primary_service": "checkout-api",
+  "expected_dependency": "postgresql-checkout",
+  "key_evidence_themes": [
+    "deployment_config_change",
+    "pool_utilization_spike",
+    "connection_errors"
+  ],
+  "timeline_anchors": [
+    {
+      "at": "2026-09-28T14:29:00Z",
+      "event": "deployment_started"
+    },
+    {
+      "at": "2026-09-28T14:32:00Z",
+      "event": "errors_begin"
+    }
+  ]
+}

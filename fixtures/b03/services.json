@@ -1,0 +1,13 @@
+[
+  {
+    "name": "checkout-api",
+    "owner": "checkout-team",
+    "dependencies": [
+      "postgresql-checkout"
+    ]
+  },
+  {
+    "name": "postgresql-checkout",
+    "type": "database"
+  }
+]
