@@ -1,0 +1,649 @@
+openapi: 3.1.0
+info:
+  title: AVENIQ Investigation API
+  version: 0.1.0
+  description: |
+    Contract-first API for incident investigations (Phase 0b–1).
+    Semantic model: engineering/lld/01-domain-model.md
+servers:
+  - url: http://127.0.0.1:8000
+    description: Local development
+  - url: https://api.staging.example.com
+    description: VPS staging (future)
+tags:
+  - name: health
+  - name: investigations
+paths:
+  /health:
+    get:
+      tags: [health]
+      operationId: getHealth
+      summary: Liveness probe
+      responses:
+        "200":
+          description: Service is up
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/HealthResponse"
+              example:
+                status: ok
+                service: aveniq-api
+                version: 0.1.0
+  /api/v1/investigations:
+    post:
+      tags: [investigations]
+      operationId: createInvestigation
+      summary: Start a new investigation
+      parameters:
+        - $ref: "#/components/parameters/RequestIdHeader"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateInvestigationRequest"
+            examples:
+              b03_alert:
+                summary: B03 from alert signal
+                value:
+                  benchmark_id: b03
+                  signal:
+                    kind: alert
+                    fired_at: "2026-09-28T14:36:00Z"
+                    service: checkout-api
+                    description: checkout-api error rate high
+      responses:
+        "201":
+          description: Investigation created
+          headers:
+            X-Request-Id:
+              schema:
+                type: string
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InvestigationResponse"
+              examples:
+                b03_created:
+                  $ref: "#/components/examples/InvestigationCreatedB03"
+        "422":
+          $ref: "#/components/responses/ValidationError"
+        "500":
+          $ref: "#/components/responses/InternalError"
+  /api/v1/investigations/{investigation_id}:
+    get:
+      tags: [investigations]
+      operationId: getInvestigation
+      summary: Get investigation aggregate
+      parameters:
+        - $ref: "#/components/parameters/InvestigationId"
+        - $ref: "#/components/parameters/RequestIdHeader"
+      responses:
+        "200":
+          description: Investigation aggregate
+          headers:
+            X-Request-Id:
+              schema:
+                type: string
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InvestigationResponse"
+              examples:
+                b03_after_run:
+                  $ref: "#/components/examples/InvestigationAfterRunB03"
+        "404":
+          $ref: "#/components/responses/InvestigationNotFound"
+        "500":
+          $ref: "#/components/responses/InternalError"
+  /api/v1/investigations/{investigation_id}/run:
+    post:
+      tags: [investigations]
+      operationId: runInvestigation
+      summary: Execute investigation run (deterministic playbook for benchmark)
+      description: |
+        Slice 0 may return 501. Slice 1 runs B03 playbook.
+        Second call after terminal state returns 409 investigation_already_run.
+      parameters:
+        - $ref: "#/components/parameters/InvestigationId"
+        - $ref: "#/components/parameters/RequestIdHeader"
+      responses:
+        "200":
+          description: Run completed
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InvestigationResponse"
+              examples:
+                b03_after_run:
+                  $ref: "#/components/examples/InvestigationAfterRunB03"
+        "404":
+          $ref: "#/components/responses/InvestigationNotFound"
+        "409":
+          $ref: "#/components/responses/InvestigationAlreadyRun"
+        "422":
+          $ref: "#/components/responses/ValidationError"
+        "501":
+          $ref: "#/components/responses/RunNotImplemented"
+        "500":
+          $ref: "#/components/responses/InternalError"
+components:
+  parameters:
+    InvestigationId:
+      name: investigation_id
+      in: path
+      required: true
+      schema:
+        type: string
+        pattern: "^[0-9A-HJKMNP-TV-Z]{26}$"
+        description: ULID
+      example: 01J9Y2K5Q8Z7X6W5V4U3T2S1R0
+    RequestIdHeader:
+      name: X-Request-Id
+      in: header
+      required: false
+      schema:
+        type: string
+        maxLength: 128
+  schemas:
+    HealthResponse:
+      type: object
+      required: [status, service, version]
+      properties:
+        status:
+          type: string
+          enum: [ok, degraded]
+        service:
+          type: string
+        version:
+          type: string
+    CreateInvestigationRequest:
+      type: object
+      required: [benchmark_id, signal]
+      properties:
+        benchmark_id:
+          type: string
+          description: Benchmark package id (Slice 1 run supports b03)
+          example: b03
+        signal:
+          $ref: "#/components/schemas/Signal"
+        org_id:
+          type: string
+          nullable: true
+        environment_id:
+          type: string
+          nullable: true
+    Signal:
+      type: object
+      required: [kind]
+      properties:
+        kind:
+          type: string
+          enum: [alert, symptom, manual]
+        fired_at:
+          type: string
+          format: date-time
+        service:
+          type: string
+        description:
+          type: string
+        raw:
+          type: object
+          additionalProperties: true
+    InvestigationState:
+      type: string
+      enum:
+        - initialized
+        - context_gathering
+        - investigating
+        - rca_candidate
+        - inconclusive
+        - blocked
+    TimeWindow:
+      type: object
+      required: [start, end]
+      properties:
+        start:
+          type: string
+          format: date-time
+        end:
+          type: string
+          format: date-time
+    InvestigationHeader:
+      type: object
+      required:
+        - id
+        - benchmark_id
+        - state
+        - created_at
+        - updated_at
+        - run_count
+      properties:
+        id:
+          type: string
+        benchmark_id:
+          type: string
+        state:
+          $ref: "#/components/schemas/InvestigationState"
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+        run_count:
+          type: integer
+          minimum: 0
+        org_id:
+          type: string
+          nullable: true
+        environment_id:
+          type: string
+          nullable: true
+        incident_window:
+          $ref: "#/components/schemas/TimeWindow"
+        run_completed_at:
+          type: string
+          format: date-time
+          nullable: true
+        signal:
+          $ref: "#/components/schemas/Signal"
+    EvidenceStrength:
+      type: string
+      enum: [direct, derived, correlated, inferred, human_provided]
+    EvidenceSourceType:
+      type: string
+      enum:
+        - telemetry_log
+        - telemetry_metric
+        - telemetry_trace
+        - change_deployment
+        - context_service
+        - alert
+        - human
+    EvidenceProvenance:
+      type: object
+      properties:
+        connector:
+          type: string
+        fixture_path:
+          type: string
+        fixture_ref:
+          type: string
+        query:
+          type: object
+          additionalProperties: true
+    Evidence:
+      type: object
+      required:
+        - id
+        - source
+        - source_type
+        - entity
+        - observation
+        - event_time
+        - retrieved_at
+        - strength
+        - provenance
+      properties:
+        id:
+          type: string
+        source:
+          type: string
+        source_type:
+          $ref: "#/components/schemas/EvidenceSourceType"
+        entity:
+          type: string
+        observation:
+          type: string
+        event_time:
+          type: string
+          format: date-time
+        retrieved_at:
+          type: string
+          format: date-time
+        strength:
+          $ref: "#/components/schemas/EvidenceStrength"
+        provenance:
+          $ref: "#/components/schemas/EvidenceProvenance"
+    HypothesisStatus:
+      type: string
+      enum: [proposed, supported, weakened, rejected]
+    Hypothesis:
+      type: object
+      required: [id, statement, status, supporting_evidence_ids, contradicting_evidence_ids]
+      properties:
+        id:
+          type: string
+        statement:
+          type: string
+        status:
+          $ref: "#/components/schemas/HypothesisStatus"
+        supporting_evidence_ids:
+          type: array
+          items:
+            type: string
+        contradicting_evidence_ids:
+          type: array
+          items:
+            type: string
+    RcaStatus:
+      type: string
+      enum: [confirmed, probable, possible, inconclusive]
+    RcaClaim:
+      type: object
+      required: [id, text, evidence_ids]
+      properties:
+        id:
+          type: string
+        text:
+          type: string
+        evidence_ids:
+          type: array
+          items:
+            type: string
+          minItems: 1
+    RcaTimelineEntry:
+      type: object
+      required: [at, description]
+      properties:
+        at:
+          type: string
+          format: date-time
+        description:
+          type: string
+    Rca:
+      type: object
+      required:
+        - status
+        - summary
+        - root_cause
+        - contributing_factors
+        - causal_chain
+        - timeline
+        - affected_components
+        - claims
+        - contradicting_evidence_ids
+        - evidence_gaps
+        - remediation
+        - observability_lessons
+      properties:
+        status:
+          $ref: "#/components/schemas/RcaStatus"
+        summary:
+          type: string
+        root_cause:
+          type: string
+        contributing_factors:
+          type: array
+          items:
+            type: string
+        causal_chain:
+          type: array
+          items:
+            type: string
+        timeline:
+          type: array
+          items:
+            $ref: "#/components/schemas/RcaTimelineEntry"
+        affected_components:
+          type: array
+          items:
+            type: string
+        claims:
+          type: array
+          items:
+            $ref: "#/components/schemas/RcaClaim"
+        contradicting_evidence_ids:
+          type: array
+          items:
+            type: string
+        uncertainty:
+          type: string
+          nullable: true
+        evidence_gaps:
+          type: array
+          items:
+            type: string
+        remediation:
+          type: array
+          items:
+            type: string
+        observability_lessons:
+          type: array
+          items:
+            type: string
+    InvestigationEvent:
+      type: object
+      required: [seq, type, occurred_at, payload]
+      properties:
+        seq:
+          type: integer
+          minimum: 1
+        type:
+          type: string
+        occurred_at:
+          type: string
+          format: date-time
+        payload:
+          type: object
+          additionalProperties: true
+    InvestigationResponse:
+      type: object
+      required: [investigation, events, evidence, hypotheses]
+      properties:
+        investigation:
+          $ref: "#/components/schemas/InvestigationHeader"
+        events:
+          type: array
+          items:
+            $ref: "#/components/schemas/InvestigationEvent"
+        evidence:
+          type: array
+          items:
+            $ref: "#/components/schemas/Evidence"
+        hypotheses:
+          type: array
+          items:
+            $ref: "#/components/schemas/Hypothesis"
+        rca:
+          $ref: "#/components/schemas/Rca"
+          nullable: true
+    ProblemDetail:
+      type: object
+      required: [type, title, status, code]
+      properties:
+        type:
+          type: string
+          format: uri
+        title:
+          type: string
+        status:
+          type: integer
+        detail:
+          type: string
+        instance:
+          type: string
+        code:
+          type: string
+        errors:
+          type: array
+          items:
+            type: object
+            properties:
+              field:
+                type: string
+              message:
+                type: string
+  responses:
+    ValidationError:
+      description: Request validation failed
+      content:
+        application/problem+json:
+          schema:
+            $ref: "#/components/schemas/ProblemDetail"
+          example:
+            type: https://aveniq.dev/problems/validation_error
+            title: Validation Error
+            status: 422
+            code: validation_error
+            detail: benchmark_id is required
+    InvestigationNotFound:
+      description: Investigation not found
+      content:
+        application/problem+json:
+          schema:
+            $ref: "#/components/schemas/ProblemDetail"
+          example:
+            type: https://aveniq.dev/problems/investigation_not_found
+            title: Not Found
+            status: 404
+            code: investigation_not_found
+            detail: Investigation 01J9Y2K5Q8Z7X6W5V4U3T2S1R0 not found
+    InvestigationAlreadyRun:
+      description: Investigation run already completed
+      content:
+        application/problem+json:
+          schema:
+            $ref: "#/components/schemas/ProblemDetail"
+          example:
+            type: https://aveniq.dev/problems/investigation_already_run
+            title: Conflict
+            status: 409
+            code: investigation_already_run
+            detail: Investigation already completed; use GET to retrieve results
+    RunNotImplemented:
+      description: Run endpoint not implemented (Slice 0)
+      content:
+        application/problem+json:
+          schema:
+            $ref: "#/components/schemas/ProblemDetail"
+          example:
+            type: https://aveniq.dev/problems/investigation_run_not_implemented
+            title: Not Implemented
+            status: 501
+            code: investigation_run_not_implemented
+            detail: Investigation run is not available until Slice 1
+    InternalError:
+      description: Internal server error
+      content:
+        application/problem+json:
+          schema:
+            $ref: "#/components/schemas/ProblemDetail"
+          example:
+            type: https://aveniq.dev/problems/internal_error
+            title: Internal Server Error
+            status: 500
+            code: internal_error
+            detail: An unexpected error occurred
+  examples:
+    InvestigationCreatedB03:
+      value:
+        investigation:
+          id: 01J9Y2K5Q8Z7X6W5V4U3T2S1R0
+          benchmark_id: b03
+          state: initialized
+          created_at: "2026-09-28T15:00:00Z"
+          updated_at: "2026-09-28T15:00:00Z"
+          run_count: 0
+          org_id: null
+          environment_id: null
+          incident_window: null
+          run_completed_at: null
+          signal:
+            kind: alert
+            fired_at: "2026-09-28T14:36:00Z"
+            service: checkout-api
+            description: checkout-api error rate high
+        events:
+          - seq: 1
+            type: investigation.created
+            occurred_at: "2026-09-28T15:00:00Z"
+            payload:
+              benchmark_id: b03
+        evidence: []
+        hypotheses: []
+        rca: null
+    InvestigationAfterRunB03:
+      value:
+        investigation:
+          id: 01J9Y2K5Q8Z7X6W5V4U3T2S1R0
+          benchmark_id: b03
+          state: rca_candidate
+          created_at: "2026-09-28T15:00:00Z"
+          updated_at: "2026-09-28T15:00:05Z"
+          run_count: 1
+          incident_window:
+            start: "2026-09-28T14:28:00Z"
+            end: "2026-09-28T14:45:00Z"
+          run_completed_at: "2026-09-28T15:00:05Z"
+          signal:
+            kind: alert
+            fired_at: "2026-09-28T14:36:00Z"
+            service: checkout-api
+            description: checkout-api error rate high
+        events:
+          - seq: 1
+            type: investigation.created
+            occurred_at: "2026-09-28T15:00:00Z"
+            payload:
+              benchmark_id: b03
+          - seq: 2
+            type: rca.published
+            occurred_at: "2026-09-28T15:00:05Z"
+            payload:
+              rca_status: probable
+        evidence:
+          - id: ev_b03_alert_001
+            source: fixture
+            source_type: alert
+            entity: checkout-api
+            observation: Alert checkout-api error rate high fired at 2026-09-28T14:36:00Z
+            event_time: "2026-09-28T14:36:00Z"
+            retrieved_at: "2026-09-28T15:00:01Z"
+            strength: direct
+            provenance:
+              connector: fixture_metadata
+              fixture_path: fixtures/b03/alert.json
+              fixture_ref: alert.json
+        hypotheses:
+          - id: hyp_b03_h1
+            statement: Recent deployment reduced database connection pool capacity, leading to connection exhaustion and checkout-api errors.
+            status: supported
+            supporting_evidence_ids:
+              - ev_b03_alert_001
+              - ev_b03_log_errors_001
+              - ev_b03_metric_pool_util_001
+              - ev_b03_deploy_001
+            contradicting_evidence_ids: []
+        rca:
+          status: probable
+          summary: Deployment reduced DB pool size; connection exhaustion caused checkout-api errors.
+          root_cause: A production deployment (v2.8.1) reduced the database connection pool max size, causing connection pool exhaustion.
+          contributing_factors: []
+          causal_chain:
+            - Configuration change (pool max 50→5)
+            - Connection pool exhaustion
+            - DB acquisition failures
+            - checkout-api HTTP errors
+          timeline:
+            - at: "2026-09-28T14:29:00Z"
+              description: checkout-api v2.8.1 deployment started
+            - at: "2026-09-28T14:32:00Z"
+              description: Database connection errors observed
+          affected_components:
+            - checkout-api
+            - postgresql-checkout
+          claims:
+            - id: claim_b03_2
+              text: Connection pool utilization peaked at 99%
+              evidence_ids:
+                - ev_b03_metric_pool_util_001
+          contradicting_evidence_ids: []
+          uncertainty: Distributed tracing not used; request-level impact not verified.
+          evidence_gaps: []
+          remediation:
+            - Roll back or increase database.pool.max_size
+          observability_lessons:
+            - Alert on db.pool.utilization before error rate spikes

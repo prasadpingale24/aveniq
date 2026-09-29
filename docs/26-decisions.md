@@ -275,7 +275,23 @@ Accepted.
 
 ---
 
-# 14. Future Decisions
+# 14. Implementation ADRs
+
+Engineering decisions for Phase 0b+ are recorded under [`engineering/adrs/`](../engineering/adrs/) and summarized here:
+
+| ID | Title | Status |
+|----|-------|--------|
+| ADR-011 | Python 3.12+ and uv workspace | Accepted |
+| ADR-012 | SQLite persistence (Phase 0b–1) | Accepted |
+| ADR-013 | Fixture package format v1 | Accepted |
+| ADR-014 | Deterministic investigator v1 (B03) | Accepted |
+
+HTTP contract: [`engineering/api/openapi.yaml`](../engineering/api/openapi.yaml).  
+Design gate before implementation: [`engineering/DESIGN_GATE.md`](../engineering/DESIGN_GATE.md).
+
+---
+
+# 15. Future Decisions
 
 Important future decisions may include:
 
@@ -293,6 +309,6 @@ These should be recorded when enough evidence exists to make them meaningful.
 
 ---
 
-# 15. Decision Principle
+# 16. Decision Principle
 
 > **Document why a decision was made, not just what was built.**
