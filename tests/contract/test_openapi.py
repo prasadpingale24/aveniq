@@ -21,6 +21,8 @@ def test_app_exposes_core_paths(client: TestClient):
     assert "/api/v1/investigations" in paths
     assert "/api/v1/investigations/{investigation_id}" in paths
     assert "/api/v1/investigations/{investigation_id}/run" in paths
+    assert "/api/v1/playground/scenarios" in paths
+    assert "/api/v1/playground/scenarios/{scenario_id}/runs" in paths
 
 
 def test_create_investigation_has_b03_openapi_example(client: TestClient):

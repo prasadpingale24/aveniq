@@ -149,6 +149,24 @@ class InvestigationResponse(BaseModel):
     rca: RcaResponse | None = None
 
 
+class PlaygroundScenarioSummary(BaseModel):
+    scenario_id: str
+    benchmark_id: str
+    title: str
+    description: str
+
+
+class PlaygroundScenarioListResponse(BaseModel):
+    scenarios: list[PlaygroundScenarioSummary]
+
+
+class PlaygroundRunResponse(BaseModel):
+    scenario_id: str
+    investigation_id: str
+    state: str
+    investigation: InvestigationResponse
+
+
 class HealthResponse(BaseModel):
     status: str = Field(examples=["ok"])
     service: str = Field(examples=["aveniq-api"])

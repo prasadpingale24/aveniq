@@ -13,6 +13,7 @@ servers:
 tags:
   - name: health
   - name: investigations
+  - name: playground
 paths:
   /health:
     get:
@@ -126,6 +127,54 @@ paths:
           $ref: "#/components/responses/ValidationError"
         "501":
           $ref: "#/components/responses/RunNotImplemented"
+        "500":
+          $ref: "#/components/responses/InternalError"
+  /api/v1/playground/scenarios:
+    get:
+      tags: [playground]
+      operationId: listPlaygroundScenarios
+      summary: List Playground scenarios
+      description: Controlled demo scenarios (local/demo only; Slice 2).
+      responses:
+        "200":
+          description: Scenario catalog
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PlaygroundScenarioListResponse"
+  /api/v1/playground/scenarios/{scenario_id}/runs:
+    post:
+      tags: [playground]
+      operationId: runPlaygroundScenario
+      summary: Run a Playground scenario end-to-end
+      description: |
+        Resets and triggers the checkout stand-in, creates an investigation, runs the playbook.
+        Investigation connectors remain fixture-based in Slice 2.
+      parameters:
+        - name: scenario_id
+          in: path
+          required: true
+          schema:
+            type: string
+            example: b03
+        - $ref: "#/components/parameters/RequestIdHeader"
+      responses:
+        "201":
+          description: Playground run completed
+          headers:
+            X-Request-Id:
+              schema:
+                type: string
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PlaygroundRunResponse"
+        "404":
+          $ref: "#/components/responses/PlaygroundScenarioNotFound"
+        "502":
+          $ref: "#/components/responses/PlaygroundUpstreamError"
+        "504":
+          $ref: "#/components/responses/PlaygroundTimeout"
         "500":
           $ref: "#/components/responses/InternalError"
 components:
@@ -429,6 +478,40 @@ components:
         payload:
           type: object
           additionalProperties: true
+    PlaygroundScenarioSummary:
+      type: object
+      required: [scenario_id, benchmark_id, title, description]
+      properties:
+        scenario_id:
+          type: string
+          example: b03
+        benchmark_id:
+          type: string
+          example: b03
+        title:
+          type: string
+        description:
+          type: string
+    PlaygroundScenarioListResponse:
+      type: object
+      required: [scenarios]
+      properties:
+        scenarios:
+          type: array
+          items:
+            $ref: "#/components/schemas/PlaygroundScenarioSummary"
+    PlaygroundRunResponse:
+      type: object
+      required: [scenario_id, investigation_id, state]
+      properties:
+        scenario_id:
+          type: string
+        investigation_id:
+          type: string
+        state:
+          type: string
+        investigation:
+          $ref: "#/components/schemas/InvestigationResponse"
     InvestigationResponse:
       type: object
       required: [investigation, events, evidence, hypotheses]
@@ -525,6 +608,39 @@ components:
             status: 501
             code: investigation_run_not_implemented
             detail: Investigation run is not available until Slice 1
+    PlaygroundScenarioNotFound:
+      description: Unknown Playground scenario
+      content:
+        application/problem+json:
+          schema:
+            $ref: "#/components/schemas/ProblemDetail"
+          example:
+            type: https://aveniq.dev/problems/scenario_not_found
+            title: Not Found
+            status: 404
+            code: scenario_not_found
+    PlaygroundUpstreamError:
+      description: Stand-in or upstream HTTP failure
+      content:
+        application/problem+json:
+          schema:
+            $ref: "#/components/schemas/ProblemDetail"
+          example:
+            type: https://aveniq.dev/problems/playground_upstream_error
+            title: Bad Gateway
+            status: 502
+            code: playground_upstream_error
+    PlaygroundTimeout:
+      description: Playground run timed out waiting for terminal investigation state
+      content:
+        application/problem+json:
+          schema:
+            $ref: "#/components/schemas/ProblemDetail"
+          example:
+            type: https://aveniq.dev/problems/playground_timeout
+            title: Gateway Timeout
+            status: 504
+            code: playground_timeout
     InternalError:
       description: Internal server error
       content:

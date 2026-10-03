@@ -1,12 +1,38 @@
-# Docker Compose (Phase 0b+)
+# Docker Compose
 
-Placeholder for local and staging Compose definitions.
+Standalone compose files per environment (`docker-compose.<type>.yml`). No override merge pattern.
 
-- **Slice 2:** stand-in app + AVENIQ API
-- **Staging:** see [engineering/hld/05-deployment-evolution.md](../engineering/hld/05-deployment-evolution.md)
+## Prerequisites
 
-Files to be added in Phase 0b/Slice 2:
+- Docker Engine + Compose v2
+- For dev UI: Node.js 20+ (or use pre-built web image from compose)
 
-- `compose.yml`
-- `compose.override.yml` (local, optional)
-- `compose.staging.yml` (VPS + Harbor images)
+## Local development (`dev`)
+
+```bash
+cp compose/.env.dev.example compose/.env.dev
+docker compose -f compose/docker-compose.dev.yml --env-file compose/.env.dev up --build
+```
+
+| Service | URL |
+|---------|-----|
+| Web (Playground) | http://127.0.0.1:5173 |
+| API | http://127.0.0.1:8000/docs |
+| Checkout stand-in | http://127.0.0.1:8081/health |
+
+Investigation RCA uses **fixture** data; stand-in emits demo logs/metrics. See [engineering/lld/10-playground-orchestration.md](../engineering/lld/10-playground-orchestration.md).
+
+## CI smoke (`test`)
+
+```bash
+docker compose -f compose/docker-compose.test.yml up --build -d
+./scripts/compose_test_smoke.sh
+docker compose -f compose/docker-compose.test.yml down -v
+```
+
+## Reserved (not implemented)
+
+- `docker-compose.staging.yml` — VPS + Harbor
+- `docker-compose.prod.yml` — production
+
+Acceptance criteria: [engineering/06-slice-2-playground-compose.md](../engineering/06-slice-2-playground-compose.md).

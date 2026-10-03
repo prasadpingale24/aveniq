@@ -285,6 +285,7 @@ Engineering decisions for Phase 0b+ are recorded under [`engineering/adrs/`](../
 | ADR-012 | SQLite persistence (Phase 0b–1) | Accepted |
 | ADR-013 | Fixture package format v1 | Accepted |
 | ADR-014 | Deterministic investigator v1 (B03) | Accepted |
+| ADR-015 | Slice 2 Compose, Playground, presentation shell | Accepted |
 
 HTTP contract: [`engineering/api/openapi.yaml`](../engineering/api/openapi.yaml).  
 Design gate before implementation: [`engineering/DESIGN_GATE.md`](../engineering/DESIGN_GATE.md).

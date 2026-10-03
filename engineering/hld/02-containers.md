@@ -1,6 +1,6 @@
 # HLD 02 — Containers and packages
 
-## C4 Level 2 — Containers (Phase 0b–1)
+## C4 Level 2 — Containers (Phase 0b–2)
 
 ```mermaid
 flowchart TB
@@ -20,16 +20,25 @@ flowchart TB
   ADP --> FixDir
 ```
 
-Single deployable **process** (`aveniq_api`) in Phase 0b–1. No separate worker service until investigation jobs are long-running enough to warrant async workers.
+Single **aveniq_api** process remains the investigation runtime. Slice 2 adds separate deployable units for demo:
+
+| Container / process | Role |
+|---------------------|------|
+| `aveniq-api` | FastAPI + SQLite + fixture connectors |
+| `checkout-standin` | Simulated checkout-api; playground reset/trigger ([`services/checkout-standin/`](../../services/checkout-standin/)) |
+| `aveniq-web` | Static SPA (Vite build); Playground UI ([`packages/aveniq_web/`](../../packages/aveniq_web/)) |
+
+No separate worker service until investigation jobs are long-running enough to warrant async workers.
 
 ## uv workspace packages
 
 | Package | Responsibility |
 |---------|----------------|
 | `aveniq_domain` | Entities, value objects, state transition rules, domain exceptions |
-| `aveniq_application` | `StartInvestigation`, `RunInvestigation`; port `Protocol` definitions |
+| `aveniq_application` | Use cases, playground orchestration, port `Protocol` definitions |
 | `aveniq_adapters` | `SqliteInvestigationRepository`, fixture connectors, OTEL bootstrap |
 | `aveniq_api` | HTTP mapping, dependency injection, OpenAPI route binding |
+| `aveniq_web` | Presentation shell (not part of uv Python workspace) |
 
 ## Dependency diagram
 

@@ -25,13 +25,18 @@
 | `OTEL_EXPORTER_OTLP_ENDPOINT` | empty (console) | empty | collector URL optional |
 | `LOG_LEVEL` | `DEBUG` | `WARNING` | `INFO` |
 
-## Compose files (Phase 0b placeholder → Slice 2+)
+## Compose files (Slice 2+)
+
+Standalone files per environment — **no** `override` merge pattern.
 
 | File | Use |
 |------|-----|
-| `compose/compose.yml` | Service definitions (api, future stand-in app) |
-| `compose/compose.override.yml` | Local: build, bind mounts (optional, gitignored patterns) |
-| `compose/compose.staging.yml` | VPS: `image:` from Harbor, volumes, no source mounts |
+| `compose/docker-compose.dev.yml` | Local: API, checkout stand-in, web UI; build contexts |
+| `compose/docker-compose.test.yml` | CI smoke: API + stand-in; ephemeral DB |
+| `compose/docker-compose.staging.yml` | Reserved: VPS Harbor images, persistent volumes (not implemented yet) |
+| `compose/docker-compose.prod.yml` | Reserved: production topology (not implemented yet) |
+
+See [compose/README.md](../compose/README.md) and [06-slice-2-playground-compose.md](06-slice-2-playground-compose.md).
 
 ## Deployment pipeline (future — not Phase 0b)
 

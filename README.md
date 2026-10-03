@@ -45,8 +45,8 @@ The current implementation is a **Phase 0b** vertical slice: a Python API that p
 | HTTP API (`/api/v1/investigations`, run, health) | Available |
 | Evidence-backed RCA for B03 | Available (deterministic investigator) |
 | OpenAPI / Swagger UI | Available at `/docs` when the API is running |
-| Docker Compose + stand-in app | Planned (engineering Slice 2) |
-| Investigation UI | Planned (product Phase 1) |
+| Docker Compose + stand-in app | Available — see [compose/README.md](compose/README.md) |
+| Playground UI | Available at http://127.0.0.1:5173 (compose dev) |
 | Agentic / LLM investigation | Later (Phase 2+) |
 
 Implementation status detail: [engineering/README.md](engineering/README.md).
@@ -62,7 +62,13 @@ uv run pytest
 uv run aveniq-api
 ```
 
-Open [http://127.0.0.1:8000/docs](http://127.0.0.1:8000/docs) for interactive API documentation. The root URL `/` is not defined; use `/health` or the API routes below.
+Open [http://127.0.0.1:8000/docs](http://127.0.0.1:8000/docs) for interactive API documentation.
+
+**Playground (Compose):** see [compose/README.md](compose/README.md). Or run the scenario CLI after starting API + stand-in:
+
+```bash
+uv run python scripts/playground_run.py --scenario b03
+``` The root URL `/` is not defined; use `/health` or the API routes below.
 
 **Example — B03** (database connection exhaustion on `checkout-api`; see [benchmark incidents](docs/21-benchmark-incidents.md)):
 

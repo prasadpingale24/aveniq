@@ -38,9 +38,9 @@ Push-based CI/CD: Jenkins **pushes** image tags; runtime **pulls** — no git on
 
 **Stage 1 (Phase 0b):** checkout → `uv sync` → `pytest` (no deploy).
 
-**Stage 2 (Slice 2+):** add `docker build` → push Harbor.
+**Stage 2 (Slice 2):** `docker compose -f compose/docker-compose.test.yml` smoke via [`scripts/compose_test_smoke.sh`](../../scripts/compose_test_smoke.sh); optional `docker build` → push Harbor.
 
-**Stage 3 (deploy handoff):** SSH or local agent on VPS → `compose -f compose.staging.yml up -d` → smoke `GET /health` + one B03 run.
+**Stage 3 (deploy handoff):** SSH or local agent on VPS → `compose -f compose/docker-compose.staging.yml up -d` → smoke `GET /health` + playground B03 run.
 
 ## Cross-references
 

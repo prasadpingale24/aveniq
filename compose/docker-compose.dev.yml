@@ -1,0 +1,53 @@
+services:
+  checkout-standin:
+    build:
+      context: ../services/checkout-standin
+      dockerfile: Dockerfile
+    ports:
+      - "8081:8081"
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8081/health')"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+
+  aveniq-api:
+    build:
+      context: ..
+      dockerfile: Dockerfile
+    ports:
+      - "8000:8000"
+    environment:
+      AVENIQ_ENV: local
+      AVENIQ_SQLITE_PATH: /data/aveniq.db
+      FIXTURE_ROOT: /app/fixtures
+      CONNECTOR_MODE: fixture
+      INVESTIGATION_RUN_ENABLED: "true"
+      CHECKOUT_STANDIN_URL: http://checkout-standin:8081
+      AVENIQ_HOST: 0.0.0.0
+      AVENIQ_PORT: "8000"
+    volumes:
+      - aveniq_data:/data
+    depends_on:
+      checkout-standin:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/health')"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  aveniq-web:
+    build:
+      context: ../packages/aveniq_web
+      dockerfile: Dockerfile
+      args:
+        VITE_API_BASE_URL: http://127.0.0.1:8000
+    ports:
+      - "5173:80"
+    depends_on:
+      aveniq-api:
+        condition: service_healthy
+
+volumes:
+  aveniq_data:

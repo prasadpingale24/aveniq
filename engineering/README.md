@@ -8,6 +8,7 @@ Implementation design for AVENIQ. Product intent lives in [`../docs/`](../docs/)
 |-------|--------|--------|
 | **0a** | HLD, LLD, OpenAPI, supporting specs, ADRs | Complete |
 | **0b** | `packages/` code, fixtures, tests | Complete (Slices 0–1) |
+| **Slice 2** | Compose, Playground, stand-in, web UI | Complete — see [06-slice-2-playground-compose.md](06-slice-2-playground-compose.md) |
 
 ## Document map
 
@@ -20,6 +21,7 @@ Implementation design for AVENIQ. Product intent lives in [`../docs/`](../docs/)
 | [02-investigation-event-catalog.md](02-investigation-event-catalog.md) | Append-only investigation event types |
 | [03-slice-0.md](03-slice-0.md) | Slice 0 acceptance criteria |
 | [04-slice-1-b03.md](04-slice-1-b03.md) | Slice 1 B03 acceptance and golden expectations |
+| [06-slice-2-playground-compose.md](06-slice-2-playground-compose.md) | Slice 2 Playground, Compose, persona foundation |
 | [05-local-vs-staging.md](05-local-vs-staging.md) | Local dev vs VPS staging isolation |
 
 ### High-level design (HLD)
@@ -44,6 +46,8 @@ Implementation design for AVENIQ. Product intent lives in [`../docs/`](../docs/)
 | [lld/06-deterministic-investigator-b03.md](lld/06-deterministic-investigator-b03.md) | B03 playbook |
 | [lld/07-observability.md](lld/07-observability.md) | Logs, traces, metrics |
 | [lld/08-errors-and-idempotency.md](lld/08-errors-and-idempotency.md) | Error model and idempotency |
+| [lld/09-presentation-profiles.md](lld/09-presentation-profiles.md) | Persona presentation profiles (UI) |
+| [lld/10-playground-orchestration.md](lld/10-playground-orchestration.md) | Playground scenario driver |
 
 ### API contract
 
@@ -60,6 +64,7 @@ Implementation design for AVENIQ. Product intent lives in [`../docs/`](../docs/)
 | [adrs/012-sqlite-persistence.md](adrs/012-sqlite-persistence.md) | SQLite for Phase 0b–1 |
 | [adrs/013-fixture-format-v1.md](adrs/013-fixture-format-v1.md) | Fixture package v1 |
 | [adrs/014-deterministic-investigator-v1.md](adrs/014-deterministic-investigator-v1.md) | B03 playbook investigator |
+| [adrs/015-slice-2-compose-and-playground.md](adrs/015-slice-2-compose-and-playground.md) | Compose naming, Playground, presentation shell |
 
 Product ADRs remain in [`../docs/26-decisions.md`](../docs/26-decisions.md).
 

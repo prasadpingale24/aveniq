@@ -1,0 +1,54 @@
+services:
+  checkout-standin:
+    build:
+      context: ../services/checkout-standin
+      dockerfile: Dockerfile
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8081/health')"]
+      interval: 3s
+      timeout: 3s
+      retries: 5
+
+  aveniq-api:
+    build:
+      context: ..
+      dockerfile: Dockerfile
+    environment:
+      AVENIQ_ENV: ci
+      AVENIQ_SQLITE_PATH: /data/aveniq.db
+      FIXTURE_ROOT: /app/fixtures
+      CONNECTOR_MODE: fixture
+      INVESTIGATION_RUN_ENABLED: "true"
+      CHECKOUT_STANDIN_URL: http://checkout-standin:8081
+      AVENIQ_HOST: 0.0.0.0
+    depends_on:
+      checkout-standin:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/health')"]
+      interval: 3s
+      timeout: 3s
+      retries: 15
+
+  smoke:
+    build:
+      context: ..
+      dockerfile: Dockerfile
+    environment:
+      AVENIQ_API_URL: http://aveniq-api:8000
+      CHECKOUT_STANDIN_URL: http://checkout-standin:8081
+    depends_on:
+      aveniq-api:
+        condition: service_healthy
+    command:
+      [
+        "python",
+        "/app/scripts/playground_run.py",
+        "--scenario",
+        "b03",
+        "--api-base",
+        "http://aveniq-api:8000",
+        "--standin-base",
+        "http://checkout-standin:8081",
+      ]
+    restart: "no"
