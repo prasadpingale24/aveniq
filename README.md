@@ -34,11 +34,12 @@ Core ideas: [investigation model](docs/09-investigation-model.md), [evidence mod
 | Engineering design | [`engineering/`](engineering/) | HLD/LLD, OpenAPI contract, ADRs, slice acceptance criteria |
 | Application code | [`packages/`](packages/) | `aveniq_domain`, `aveniq_application`, `aveniq_adapters`, `aveniq_api` |
 | Scenarios & fixtures | [`scenarios/`](scenarios/), [`fixtures/`](fixtures/) | Reproducible benchmark data (e.g. B03 checkout / DB pool exhaustion) |
-| Compose (planned) | [`compose/`](compose/) | Docker Compose for local stack and staging (Slice 2+) |
+| Compose | [`compose/`](compose/) | Docker Compose for local stack and staging |
+| UI reference (Stitch) | `stitch_aveniq_incident_investigation_design_system/` (local, **not in git**) | PNG + tokens per [engineering/07-application-surface.md](engineering/07-application-surface.md); runtime UI in `packages/aveniq_web` |
 
 ## What works today
 
-The current implementation is a **Phase 0b** vertical slice: a Python API that persists investigations in SQLite, reads **fixture-based** telemetry (no live observability backends yet), and runs a **deterministic** playbook for benchmark **B03**. There is no web UI, no LLM agent, and no MCP integrations — those are intentional later phases ([roadmap](docs/25-roadmap.md)).
+The current implementation is a **Phase 0b–1** vertical slice: a Python API that persists investigations in SQLite, reads **fixture-based** telemetry (no live observability backends yet), and runs a **deterministic** playbook for benchmark **B03**. **M1** (demo stack) adds Compose, Playground, and a minimal web shell. **What to build next** is journey-ordered in [docs/31-delivery-spine.md](docs/31-delivery-spine.md) (M2 shell → M3 dev login → M4–M5 UI E2E). Hypothesis themes remain in [roadmap](docs/25-roadmap.md). No LLM agent or MCP yet.
 
 | Capability | Status |
 |------------|--------|
@@ -89,7 +90,9 @@ OpenAPI 3.1 source of truth: [`engineering/api/openapi.yaml`](engineering/api/op
 
 - Architecture and build contract: [`engineering/README.md`](engineering/README.md)  
 - Design gate (before large implementation changes): [`engineering/DESIGN_GATE.md`](engineering/DESIGN_GATE.md)  
-- Product decisions: [`docs/26-decisions.md`](docs/26-decisions.md)
+- Product decisions: [`docs/26-decisions.md`](docs/26-decisions.md)  
+- Delivery spine: [`docs/31-delivery-spine.md`](docs/31-delivery-spine.md)  
+- UI program: [`docs/29-ui-program.md`](docs/29-ui-program.md)
 
 ## Status
 

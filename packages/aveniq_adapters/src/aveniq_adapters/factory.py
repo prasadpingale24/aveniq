@@ -6,7 +6,7 @@ from typing import Iterator
 
 from aveniq_application.investigator_b03 import DeterministicInvestigatorB03
 from aveniq_application.ports import Investigator
-from aveniq_application.use_cases import RunInvestigation, StartInvestigation
+from aveniq_application.use_cases import ListInvestigations, RunInvestigation, StartInvestigation
 
 from aveniq_adapters.clock import SystemClock
 from aveniq_adapters.connectors.fixture import (
@@ -39,6 +39,7 @@ class AppServices:
         if settings.investigation_run_enabled:
             investigator = DeterministicInvestigatorB03(telemetry, changes, metadata, self.clock)
         self.start_investigation = StartInvestigation(self.uow, self.clock)
+        self.list_investigations = ListInvestigations(self.uow)
         self.run_investigation = RunInvestigation(
             self.uow,
             investigator,

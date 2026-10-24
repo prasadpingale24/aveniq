@@ -1,0 +1,37 @@
+/* Telemetry Monolith — engineering/lld/12-design-system-telemetry-monolith.md */
+
+:root {
+  --bg-canvas: #0b0f14;
+  --bg-surface: #111822;
+  --bg-surface-raised: #16202e;
+  --bg-surface-inset: #070a0e;
+  --border-subtle: #1e293b;
+  --border-default: #334155;
+  --border-focus: #60a5fa;
+  --text-primary: #f1f5f9;
+  --text-secondary: #94a3b8;
+  --text-muted: #64748b;
+  --accent-evidence: #38bdf8;
+  --accent-hypothesis: #fbbf24;
+  --accent-rca: #c084fc;
+  --accent-human: #34d399;
+  --accent-contradiction: #fb7185;
+  --status-probable: #38bdf8;
+  --status-inconclusive: #a855f7;
+  --status-confirmed: #4ade80;
+  --status-critical: #f87171;
+
+  --shell-top-height: 44px;
+  --shell-nav-width: 56px;
+  --radius-sm: 4px;
+  --radius-md: 6px;
+
+  --gutter-engineer: 8px;
+  --gutter-lead: 12px;
+  --gutter-stakeholder: 16px;
+  --max-width-lead: 1440px;
+  --max-width-stakeholder: 1080px;
+
+  --font-ui: "Inter", system-ui, sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, monospace;
+}

@@ -1,6 +1,6 @@
 # LLD 04 — Persistence (SQLite)
 
-**ADR:** [adrs/012-sqlite-persistence.md](../adrs/012-sqlite-persistence.md)
+**ADR:** [adrs/012-sqlite-persistence.md](../adrs/012-sqlite-persistence.md), [adrs/017-investigation-tenancy-and-isolation.md](../adrs/017-investigation-tenancy-and-isolation.md)
 
 ## Connection
 
@@ -38,6 +38,7 @@ CREATE TABLE investigations (
 
 CREATE INDEX idx_investigations_benchmark ON investigations(benchmark_id);
 CREATE INDEX idx_investigations_created ON investigations(created_at);
+CREATE INDEX idx_investigations_org ON investigations(org_id);
 
 CREATE TABLE investigation_events (
   investigation_id TEXT NOT NULL,
@@ -85,6 +86,23 @@ CREATE TABLE rca (
 ```
 
 `document_json` stores serialized `Rca` model (JSON).
+
+## Isolation scope (ADR-017)
+
+| Field | Role |
+|-------|------|
+| `org_id` | **Primary** tenancy key; non-null on create in application layer |
+| `environment_id` | Secondary boundary (playground vs live env connectors) |
+
+**Defaults** when API/client omits values: `org_id = local`, `environment_id = playground` (see `aveniq_application.tenancy`).
+
+| Operation | Rule |
+|-----------|------|
+| `create` | Always persist resolved `org_id` / `environment_id` |
+| `get` by id | Phase 1: no scope filter; **staging+auth:** reject if row `org_id` ∉ caller scope |
+| `list` (future) | `WHERE org_id = ?` mandatory |
+
+Index `idx_investigations_org` supports list-by-org. DB columns remain nullable for backward-compatible SQLite v1; domain treats scope as required after create.
 
 ## Repository methods → SQL
 

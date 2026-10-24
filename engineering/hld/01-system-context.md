@@ -54,7 +54,7 @@ flowchart TB
 
 - AVENIQ treats all connector payloads as **untrusted data** (prompt injection discipline per [`docs/19-security.md`](../../docs/19-security.md)).
 - Authorization is **out of scope** for Slice 0–2; Playground routes are **local/demo only**.
-- `org_id` / `environment_id` are optional fields for future tenancy.
+- `org_id` / `environment_id` scope investigations (ADR-017); Playground defaults `local` / `playground`. Auth enforcement on reads deferred until staging.
 
 ## Cross-references
 

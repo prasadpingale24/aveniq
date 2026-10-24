@@ -6,9 +6,10 @@ from typing import Any, Callable
 
 import httpx
 
-from aveniq_domain.models import Signal
+from aveniq_domain.models import Actor, Signal
 
 from aveniq_application.playground.scenarios import get_scenario
+from aveniq_application.actor import ACTOR_SERVICE_PLAYGROUND_RUNNER
 from aveniq_application.use_cases import RunInvestigationCommand, StartInvestigationCommand
 
 
@@ -34,11 +35,17 @@ def run_scenario_inprocess(
     aggregate_to_payload: Callable[[Any], dict[str, Any]],
     *,
     client: httpx.Client | None = None,
+    run_actor: Actor | None = None,
 ) -> PlaygroundRunResult:
     """Orchestrate via use cases (API path). Stand-in still via HTTP."""
     scenario = get_scenario(scenario_id)
     if scenario is None:
         raise PlaygroundError("scenario_not_found", f"Unknown scenario: {scenario_id}")
+    if not scenario.runnable:
+        raise PlaygroundError(
+            "scenario_not_runnable",
+            f"Scenario {scenario_id} is not runnable yet (status: {scenario.status})",
+        )
 
     standin_base = standin_base.rstrip("/")
     owns_client = client is None
@@ -52,6 +59,7 @@ def run_scenario_inprocess(
             signal=signal,
             org_id=body.get("org_id"),
             environment_id=body.get("environment_id"),
+            actor=run_actor or ACTOR_SERVICE_PLAYGROUND_RUNNER,
         )
         aggregate = services.start_investigation.execute(cmd)
         inv_id = aggregate.investigation.id
@@ -89,6 +97,11 @@ def run_scenario(
     scenario = get_scenario(scenario_id)
     if scenario is None:
         raise PlaygroundError("scenario_not_found", f"Unknown scenario: {scenario_id}")
+    if not scenario.runnable:
+        raise PlaygroundError(
+            "scenario_not_runnable",
+            f"Scenario {scenario_id} is not runnable yet (status: {scenario.status})",
+        )
 
     api_base = api_base.rstrip("/")
     standin_base = standin_base.rstrip("/")

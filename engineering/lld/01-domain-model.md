@@ -58,8 +58,8 @@ B03 target: `probable`.
 | `state` | InvestigationState | |
 | `created_at` | datetime UTC | |
 | `updated_at` | datetime UTC | |
-| `org_id` | string? | nullable, future tenancy |
-| `environment_id` | string? | nullable |
+| `org_id` | string | isolation key (ADR-017); set on create, default `local` in Playground |
+| `environment_id` | string? | optional env boundary; default `playground` when omitted on create |
 | `incident_window` | TimeWindow? | set during run |
 | `run_completed_at` | datetime? | set when run finishes |
 | `run_count` | int | default 0; increment on successful run |

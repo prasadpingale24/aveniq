@@ -20,6 +20,7 @@ CREATE TABLE IF NOT EXISTS investigations (
 
 CREATE INDEX IF NOT EXISTS idx_investigations_benchmark ON investigations(benchmark_id);
 CREATE INDEX IF NOT EXISTS idx_investigations_created ON investigations(created_at);
+CREATE INDEX IF NOT EXISTS idx_investigations_org ON investigations(org_id);
 
 CREATE TABLE IF NOT EXISTS investigation_events (
   investigation_id TEXT NOT NULL,

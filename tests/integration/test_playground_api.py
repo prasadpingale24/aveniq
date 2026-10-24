@@ -9,7 +9,17 @@ def test_list_playground_scenarios(client: TestClient):
     resp = client.get("/api/v1/playground/scenarios")
     assert resp.status_code == 200
     data = resp.json()
-    assert any(s["scenario_id"] == "b03" for s in data["scenarios"])
+    ids = [s["scenario_id"] for s in data["scenarios"]]
+    assert ids == ["b01", "b02", "b03", "b04"]
+    b03 = next(s for s in data["scenarios"] if s["scenario_id"] == "b03")
+    assert b03["runnable"] is True
+    assert next(s for s in data["scenarios"] if s["scenario_id"] == "b01")["runnable"] is False
+
+
+def test_playground_run_not_runnable(client: TestClient):
+    resp = client.post("/api/v1/playground/scenarios/b01/runs")
+    assert resp.status_code == 409
+    assert resp.json()["code"] == "scenario_not_runnable"
 
 
 def test_playground_run_unknown_scenario(client: TestClient):

@@ -49,6 +49,7 @@ Client should **GET** aggregate to retrieve prior result.
 | Header | Required | Description |
 |--------|----------|-------------|
 | `X-Request-Id` | no | Client-supplied; echoed in response header; logged and traced |
+| `X-Actor-Id` | no | Optional dev/staging label; maps to `actor.kind=anonymous` until auth (ADR-018) |
 
 ## Security-related (future)
 

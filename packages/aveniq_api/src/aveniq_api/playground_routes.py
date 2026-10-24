@@ -3,9 +3,12 @@ from __future__ import annotations
 import logging
 import uuid
 
-from fastapi import APIRouter, Header, Path, Request, Response
+from fastapi import APIRouter, Depends, Header, Path, Request, Response
 
 from aveniq_application.playground import list_scenarios, run_scenario_inprocess
+from aveniq_api.auth.deps import enforce_auth
+from aveniq_api.auth.session import SessionPrincipal
+from aveniq_api.request_actor import resolve_api_actor
 from aveniq_application.playground.driver import PlaygroundError
 
 from aveniq_api.errors import problem, problem_response
@@ -31,13 +34,19 @@ def _request_id(header: str | None) -> str:
     response_model=PlaygroundScenarioListResponse,
     summary="List Playground scenarios",
 )
-def list_playground_scenarios() -> PlaygroundScenarioListResponse:
+def list_playground_scenarios(
+    request: Request,
+    _principal: SessionPrincipal | None = Depends(enforce_auth),
+) -> PlaygroundScenarioListResponse:
     scenarios = [
         PlaygroundScenarioSummary(
             scenario_id=s.scenario_id,
             benchmark_id=s.benchmark_id,
             title=s.title,
             description=s.description,
+            subtitle=s.subtitle,
+            runnable=s.runnable,
+            status=s.status,
         )
         for s in list_scenarios()
     ]
@@ -55,11 +64,13 @@ def run_playground_scenario(
     response: Response,
     scenario_id: str = Path(..., examples=["b03"]),
     x_request_id: str | None = Header(default=None, alias="X-Request-Id"),
+    principal: SessionPrincipal | None = Depends(enforce_auth),
 ) -> PlaygroundRunResponse | Response:
     rid = _request_id(x_request_id)
     response.headers["X-Request-Id"] = rid
     settings = request.app.state.settings
     services = request.app.state.services
+    run_actor = resolve_api_actor(request, principal, None)
 
     def _payload(aggregate):
         return aggregate_to_response(aggregate).model_dump(mode="json")
@@ -70,6 +81,7 @@ def run_playground_scenario(
             settings.checkout_standin_url,
             services,
             _payload,
+            run_actor=run_actor,
         )
     except PlaygroundError as exc:
         if exc.code == "scenario_not_found":
@@ -78,6 +90,16 @@ def run_playground_scenario(
                     "scenario_not_found",
                     "Not Found",
                     404,
+                    detail=str(exc),
+                    instance=str(request.url.path),
+                )
+            )
+        if exc.code == "scenario_not_runnable":
+            return problem_response(
+                problem(
+                    "scenario_not_runnable",
+                    "Conflict",
+                    409,
                     detail=str(exc),
                     instance=str(request.url.path),
                 )

@@ -1,8 +1,36 @@
+# Local data & databases
 .data/
 *.db
 *.db-*
+
+# Python
 __pycache__/
+*.py[cod]
 .pytest_cache/
 .ruff_cache/
 .venv/
+.mypy_cache/
+.coverage
+htmlcov/
+
+# Secrets & local env (keep *.example in repo)
 .env
+.env.local
+compose/.env.dev
+compose/.env.staging
+
+# Node / Vite (aveniq_web and any future packages)
+node_modules/
+dist/
+.npm/
+
+# Stitch design exports — local reference only (not runtime; see engineering/07-application-surface.md)
+stitch_aveniq_incident_investigation_design_system/
+
+# IDE & OS
+.idea/
+.vscode/
+*.swp
+*~
+.DS_Store
+Thumbs.db

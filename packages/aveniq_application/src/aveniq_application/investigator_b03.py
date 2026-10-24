@@ -21,6 +21,7 @@ from aveniq_domain.models import (
     TimeWindow,
 )
 
+from aveniq_application.actor import ACTOR_SERVICE_INVESTIGATOR_B03
 from aveniq_application.ports import (
     ChangePort,
     Clock,
@@ -274,7 +275,13 @@ class DeterministicInvestigatorB03:
         seq = uow.events.next_seq(investigation_id)
         uow.events.append(
             investigation_id,
-            InvestigationEvent(seq=seq, type=event_type, occurred_at=occurred_at, payload=payload),
+            InvestigationEvent(
+                seq=seq,
+                type=event_type,
+                occurred_at=occurred_at,
+                payload=payload,
+                actor=ACTOR_SERVICE_INVESTIGATOR_B03,
+            ),
         )
 
     def _resolve_window(self, manifest: dict, alert: dict, signal_fired: datetime | None) -> TimeWindow:

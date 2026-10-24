@@ -26,6 +26,8 @@ services:
       CHECKOUT_STANDIN_URL: http://checkout-standin:8081
       AVENIQ_HOST: 0.0.0.0
       AVENIQ_PORT: "8000"
+      AUTH_ENABLED: "true"
+      AUTH_DEV_USERS: engineer:aveniq
     volumes:
       - aveniq_data:/data
     depends_on:
@@ -42,7 +44,7 @@ services:
       context: ../packages/aveniq_web
       dockerfile: Dockerfile
       args:
-        VITE_API_BASE_URL: http://127.0.0.1:8000
+        VITE_API_BASE_URL: ""
     ports:
       - "5173:80"
     depends_on:

@@ -72,6 +72,49 @@ paths:
           $ref: "#/components/responses/ValidationError"
         "500":
           $ref: "#/components/responses/InternalError"
+    get:
+      tags: [investigations]
+      operationId: listInvestigations
+      summary: List investigations (org-scoped inbox)
+      parameters:
+        - name: org_id
+          in: query
+          schema:
+            type: string
+          description: Organization scope (ADR-017); server default local
+        - name: environment_id
+          in: query
+          schema:
+            type: string
+          description: Environment scope; server default playground
+        - name: state
+          in: query
+          schema:
+            type: string
+          description: Optional state filter
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 50
+        - name: offset
+          in: query
+          schema:
+            type: integer
+            minimum: 0
+            default: 0
+        - $ref: "#/components/parameters/RequestIdHeader"
+      responses:
+        "200":
+          description: Investigation summaries for inbox
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InvestigationListResponse"
+        "500":
+          $ref: "#/components/responses/InternalError"
   /api/v1/investigations/{investigation_id}:
     get:
       tags: [investigations]
@@ -463,6 +506,18 @@ components:
           type: array
           items:
             type: string
+    Actor:
+      type: object
+      required: [kind, id]
+      properties:
+        kind:
+          type: string
+          enum: [anonymous, user, service, system]
+        id:
+          type: string
+        display:
+          type: string
+          nullable: true
     InvestigationEvent:
       type: object
       required: [seq, type, occurred_at, payload]
@@ -478,9 +533,12 @@ components:
         payload:
           type: object
           additionalProperties: true
+        actor:
+          $ref: "#/components/schemas/Actor"
+          description: Who or what caused this event (ADR-018); omitted on legacy rows
     PlaygroundScenarioSummary:
       type: object
-      required: [scenario_id, benchmark_id, title, description]
+      required: [scenario_id, benchmark_id, title, description, runnable, status]
       properties:
         scenario_id:
           type: string
@@ -492,6 +550,16 @@ components:
           type: string
         description:
           type: string
+        subtitle:
+          type: string
+          example: connection pool starvation
+        runnable:
+          type: boolean
+          example: true
+        status:
+          type: string
+          enum: [ready, planned, draft]
+          example: ready
     PlaygroundScenarioListResponse:
       type: object
       required: [scenarios]
@@ -512,6 +580,38 @@ components:
           type: string
         investigation:
           $ref: "#/components/schemas/InvestigationResponse"
+    InvestigationListItem:
+      type: object
+      required: [id, benchmark_id, state, created_at, updated_at]
+      properties:
+        id:
+          type: string
+        benchmark_id:
+          type: string
+        state:
+          type: string
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+        org_id:
+          type: string
+        environment_id:
+          type: string
+        service:
+          type: string
+        signal_description:
+          type: string
+    InvestigationListResponse:
+      type: object
+      required: [investigations]
+      properties:
+        investigations:
+          type: array
+          items:
+            $ref: "#/components/schemas/InvestigationListItem"
     InvestigationResponse:
       type: object
       required: [investigation, events, evidence, hypotheses]

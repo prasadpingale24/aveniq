@@ -6,6 +6,7 @@ from typing import Any
 from pydantic import BaseModel, Field
 
 from aveniq_domain.enums import (
+    ActorKind,
     EvidenceSourceType,
     EvidenceStrength,
     HypothesisStatus,
@@ -126,11 +127,18 @@ class Rca(BaseModel):
     observability_lessons: list[str] = Field(default_factory=list)
 
 
+class Actor(BaseModel):
+    kind: ActorKind
+    id: str
+    display: str | None = None
+
+
 class InvestigationEvent(BaseModel):
     seq: int
     type: str
     occurred_at: datetime
     payload: dict[str, Any] = Field(default_factory=dict)
+    actor: Actor | None = None
 
 
 class InvestigationAggregate(BaseModel):

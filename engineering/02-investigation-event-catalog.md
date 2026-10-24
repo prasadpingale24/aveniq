@@ -10,7 +10,12 @@ Append-only events stored in `investigation_events` (see [lld/04-persistence.md]
 | `type` | string | Catalog id below |
 | `occurred_at` | ISO-8601 UTC | Event time (usually clock.now at write) |
 | `payload` | object | Type-specific body |
+| `actor` | object? | **Mutating events:** `{ kind, id, display? }` per [ADR-018](adrs/018-actor-attribution.md) |
 | `correlation` | object? | Optional: `step_id`, `question_id` |
+
+Persisted in SQLite `payload_json` as `{ "payload": {…}, "actor": {…}? }` (legacy rows: flat payload only).
+
+**Actor kinds:** `anonymous`, `user`, `service`, `system`. Defaults: API request → `anonymous`/`local` (optional `X-Actor-Id`); Playground orchestration → `service`/`playground-runner`; B03 playbook steps → `service`/`investigator-b03`. Presentation profile is **not** an actor.
 
 Wire format for events inside `InvestigationResponse` mirrors this (OpenAPI `InvestigationEvent`).
 

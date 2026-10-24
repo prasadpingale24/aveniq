@@ -27,6 +27,7 @@ from aveniq_domain.models import (
     TimeWindow,
 )
 
+from aveniq_adapters.persistence.event_storage import event_from_storage_row, event_to_storage_json
 from aveniq_application.ports import UnitOfWork
 
 
@@ -120,6 +121,51 @@ class SqliteInvestigationRepository:
         ).fetchone()
         if row is None:
             return None
+        return self._row_to_investigation(row)
+
+    def update(self, investigation: Investigation) -> None:
+        iw = investigation.incident_window
+        self._conn.execute(
+            """
+            UPDATE investigations SET
+              state = ?, updated_at = ?, incident_window_start = ?, incident_window_end = ?,
+              run_completed_at = ?, run_count = ?
+            WHERE id = ?
+            """,
+            (
+                investigation.state,
+                _dt_to_str(investigation.updated_at),
+                _dt_to_str(iw.start) if iw else None,
+                _dt_to_str(iw.end) if iw else None,
+                _dt_to_str(investigation.run_completed_at) if investigation.run_completed_at else None,
+                investigation.run_count,
+                investigation.id,
+            ),
+        )
+
+    def list_for_scope(
+        self,
+        org_id: str,
+        environment_id: str,
+        *,
+        limit: int = 50,
+        offset: int = 0,
+        state: str | None = None,
+    ) -> list[Investigation]:
+        query = """
+            SELECT * FROM investigations
+            WHERE org_id = ? AND environment_id = ?
+        """
+        params: list[object] = [org_id, environment_id]
+        if state:
+            query += " AND state = ?"
+            params.append(state)
+        query += " ORDER BY updated_at DESC LIMIT ? OFFSET ?"
+        params.extend([limit, offset])
+        rows = self._conn.execute(query, params).fetchall()
+        return [self._row_to_investigation(row) for row in rows]
+
+    def _row_to_investigation(self, row: sqlite3.Row) -> Investigation:
         signal_data = json.loads(row["signal_json"])
         signal = Signal(
             kind=SignalKind(signal_data["kind"]),
@@ -148,26 +194,6 @@ class SqliteInvestigationRepository:
             signal=signal,
         )
 
-    def update(self, investigation: Investigation) -> None:
-        iw = investigation.incident_window
-        self._conn.execute(
-            """
-            UPDATE investigations SET
-              state = ?, updated_at = ?, incident_window_start = ?, incident_window_end = ?,
-              run_completed_at = ?, run_count = ?
-            WHERE id = ?
-            """,
-            (
-                investigation.state,
-                _dt_to_str(investigation.updated_at),
-                _dt_to_str(iw.start) if iw else None,
-                _dt_to_str(iw.end) if iw else None,
-                _dt_to_str(investigation.run_completed_at) if investigation.run_completed_at else None,
-                investigation.run_count,
-                investigation.id,
-            ),
-        )
-
 
 class SqliteEventRepository:
     def __init__(self, conn: sqlite3.Connection) -> None:
@@ -187,6 +213,7 @@ class SqliteEventRepository:
             type=event.type,
             occurred_at=event.occurred_at,
             payload=event.payload,
+            actor=event.actor,
         )
         self._conn.execute(
             """
@@ -198,7 +225,7 @@ class SqliteEventRepository:
                 stored.seq,
                 stored.type,
                 _dt_to_str(stored.occurred_at),
-                json.dumps(stored.payload),
+                event_to_storage_json(stored),
             ),
         )
         return stored
@@ -209,11 +236,12 @@ class SqliteEventRepository:
             (investigation_id,),
         ).fetchall()
         return [
-            InvestigationEvent(
-                seq=row["seq"],
-                type=row["type"],
-                occurred_at=_str_to_dt(row["occurred_at"]),
-                payload=json.loads(row["payload_json"]),
+            event_from_storage_row(
+                row["seq"],
+                row["type"],
+                row["occurred_at"],
+                row["payload_json"],
+                _str_to_dt,
             )
             for row in rows
         ]

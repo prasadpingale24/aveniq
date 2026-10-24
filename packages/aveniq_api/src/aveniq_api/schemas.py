@@ -5,7 +5,7 @@ from typing import Any
 
 from pydantic import BaseModel, ConfigDict, Field
 
-from aveniq_domain.models import InvestigationAggregate
+from aveniq_domain.models import Investigation, InvestigationAggregate
 
 from aveniq_api.openapi_examples import B03_CREATE_REQUEST, B03_INVESTIGATION_AFTER_RUN
 
@@ -51,8 +51,14 @@ class CreateInvestigationRequest(BaseModel):
         examples=["b03"],
     )
     signal: SignalRequest
-    org_id: str | None = Field(default=None, description="Optional tenancy (future)")
-    environment_id: str | None = Field(default=None, description="Optional environment (future)")
+    org_id: str | None = Field(
+        default=None,
+        description="Organization scope; server default `local` when omitted (ADR-017)",
+    )
+    environment_id: str | None = Field(
+        default=None,
+        description="Environment scope; server default `playground` when omitted (ADR-017)",
+    )
 
 
 class TimeWindowResponse(BaseModel):
@@ -128,11 +134,34 @@ class RcaResponse(BaseModel):
     observability_lessons: list[str] = Field(default_factory=list)
 
 
+class ActorResponse(BaseModel):
+    kind: str
+    id: str
+    display: str | None = None
+
+
 class InvestigationEventResponse(BaseModel):
     seq: int
     type: str
     occurred_at: datetime
     payload: dict[str, Any] = Field(default_factory=dict)
+    actor: ActorResponse | None = None
+
+
+class InvestigationListItem(BaseModel):
+    id: str
+    benchmark_id: str
+    state: str
+    created_at: datetime
+    updated_at: datetime
+    org_id: str | None = None
+    environment_id: str | None = None
+    service: str | None = None
+    signal_description: str | None = None
+
+
+class InvestigationListResponse(BaseModel):
+    investigations: list[InvestigationListItem]
 
 
 class InvestigationResponse(BaseModel):
@@ -154,6 +183,9 @@ class PlaygroundScenarioSummary(BaseModel):
     benchmark_id: str
     title: str
     description: str
+    subtitle: str = ""
+    runnable: bool = True
+    status: str = Field(default="ready", examples=["ready", "planned", "draft"])
 
 
 class PlaygroundScenarioListResponse(BaseModel):
@@ -173,6 +205,22 @@ class HealthResponse(BaseModel):
     version: str = Field(examples=["0.1.0"])
 
 
+class AuthConfigResponse(BaseModel):
+    enabled: bool
+    dev_login: bool
+
+
+class AuthLoginRequest(BaseModel):
+    username: str
+    password: str
+
+
+class AuthUserResponse(BaseModel):
+    authenticated: bool
+    user_id: str | None = None
+    display_name: str | None = None
+
+
 class ProblemDetail(BaseModel):
     type: str
     title: str
@@ -181,6 +229,20 @@ class ProblemDetail(BaseModel):
     detail: str | None = None
     instance: str | None = None
     errors: list[dict[str, str]] | None = None
+
+
+def investigation_to_list_item(inv: Investigation) -> InvestigationListItem:
+    return InvestigationListItem(
+        id=inv.id,
+        benchmark_id=inv.benchmark_id,
+        state=inv.state.value,
+        created_at=inv.created_at,
+        updated_at=inv.updated_at,
+        org_id=inv.org_id,
+        environment_id=inv.environment_id,
+        service=inv.signal.service,
+        signal_description=inv.signal.description,
+    )
 
 
 def aggregate_to_response(aggregate: InvestigationAggregate) -> InvestigationResponse:
@@ -214,6 +276,11 @@ def aggregate_to_response(aggregate: InvestigationAggregate) -> InvestigationRes
             type=e.type,
             occurred_at=e.occurred_at,
             payload=e.payload,
+            actor=(
+                ActorResponse(kind=e.actor.kind.value, id=e.actor.id, display=e.actor.display)
+                if e.actor
+                else None
+            ),
         )
         for e in aggregate.events
     ]

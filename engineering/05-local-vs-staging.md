@@ -1,5 +1,7 @@
 # 05 — Local development vs VPS staging
 
+**Delivery context:** [00-delivery-spine.md](00-delivery-spine.md) — local dev is the **full app** (including dev auth at **M3**); staging preview is **M7** (integrations + persistence), not a different anonymous app behind basic auth only.
+
 ## Principle
 
 **Same images and compose structure; different configuration.** Local optimizes feedback; VPS staging optimizes persistence and realism.

@@ -48,6 +48,13 @@ class SignalKind(StrEnum):
     MANUAL = "manual"
 
 
+class ActorKind(StrEnum):
+    ANONYMOUS = "anonymous"
+    USER = "user"
+    SERVICE = "service"
+    SYSTEM = "system"
+
+
 TERMINAL_STATES = frozenset(
     {
         InvestigationState.RCA_CANDIDATE,

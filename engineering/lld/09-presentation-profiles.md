@@ -1,6 +1,6 @@
 # LLD 09 — Presentation profiles
 
-Maps to product [docs/05-user-personas.md](../../docs/05-user-personas.md) §7 (shared facts, different presentation) and FR-14 in [docs/07-requirements.md](../../docs/07-requirements.md).
+Maps to product [docs/05-user-personas.md](../../docs/05-user-personas.md) §7 (shared facts, different presentation) and FR-14 in [docs/07-requirements.md](../../docs/07-requirements.md). **Not authorization** — [ADR-019](../adrs/019-presentation-profile-not-authorization.md).
 
 ## Enum: PresentationProfile
 

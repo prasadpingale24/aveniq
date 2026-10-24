@@ -8,6 +8,8 @@ from aveniq_adapters.factory import AppServices, connect, migrate
 from aveniq_adapters.observability.otel import setup_otel
 from aveniq_adapters.settings import Settings
 
+from aveniq_api.auth.session import InMemorySessionStore
+from aveniq_api.auth_routes import router as auth_router
 from aveniq_api.errors import register_exception_handlers
 from aveniq_api.playground_routes import router as playground_router
 from aveniq_api.routes import router
@@ -24,6 +26,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         app.state.settings = settings
         app.state.services = AppServices(settings, conn)
         app.state.db_conn = conn
+        app.state.session_store = InMemorySessionStore()
         setup_otel(settings)
         yield
         conn.close()
@@ -52,6 +55,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         allow_methods=["*"],
         allow_headers=["*"],
     )
+    app.include_router(auth_router)
     app.include_router(router)
     app.include_router(playground_router)
     return app

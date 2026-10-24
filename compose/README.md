@@ -16,7 +16,7 @@ docker compose -f compose/docker-compose.dev.yml --env-file compose/.env.dev up 
 
 | Service | URL |
 |---------|-----|
-| Web (Playground) | http://127.0.0.1:5173 |
+| Web | http://127.0.0.1:5173 (sign in: `engineer` / `aveniq` when `AUTH_ENABLED=true`) |
 | API | http://127.0.0.1:8000/docs |
 | Checkout stand-in | http://127.0.0.1:8081/health |
 

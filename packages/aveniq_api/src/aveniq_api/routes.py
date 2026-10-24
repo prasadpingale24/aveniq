@@ -3,15 +3,22 @@ from __future__ import annotations
 import logging
 import uuid
 
-from fastapi import APIRouter, Body, Header, Path, Request, Response
+from fastapi import APIRouter, Body, Depends, Header, Path, Query, Request, Response
 
 from aveniq_domain.exceptions import InvestigationNotFoundError
 from aveniq_domain.models import Signal
 from aveniq_domain.enums import SignalKind
 
-from aveniq_application.use_cases import RunInvestigationCommand, StartInvestigationCommand
+from aveniq_application.use_cases import (
+    ListInvestigationsQuery,
+    RunInvestigationCommand,
+    StartInvestigationCommand,
+)
 
 from aveniq_adapters.factory import AppServices
+from aveniq_api.auth.deps import enforce_auth
+from aveniq_api.auth.session import SessionPrincipal
+from aveniq_api.request_actor import resolve_api_actor
 from aveniq_adapters.observability.otel import get_tracer
 
 from aveniq_api import __version__
@@ -19,8 +26,10 @@ from aveniq_api.openapi_examples import B03_CREATE_REQUEST, EXAMPLE_INVESTIGATIO
 from aveniq_api.schemas import (
     CreateInvestigationRequest,
     HealthResponse,
+    InvestigationListResponse,
     InvestigationResponse,
     aggregate_to_response,
+    investigation_to_list_item,
 )
 
 logger = logging.getLogger("aveniq.api")
@@ -60,6 +69,8 @@ def create_investigation(
         },
     ),
     x_request_id: str | None = Header(default=None, alias="X-Request-Id"),
+    x_actor_id: str | None = Header(default=None, alias="X-Actor-Id"),
+    principal: SessionPrincipal | None = Depends(enforce_auth),
 ) -> InvestigationResponse:
     rid = _request_id(x_request_id)
     response.headers["X-Request-Id"] = rid
@@ -79,6 +90,7 @@ def create_investigation(
             signal=signal,
             org_id=body.org_id,
             environment_id=body.environment_id,
+            actor=resolve_api_actor(request, principal, x_actor_id),
         )
         aggregate = services.start_investigation.execute(cmd)
         span.set_attribute("investigation_id", aggregate.investigation.id)
@@ -93,6 +105,39 @@ def create_investigation(
         return aggregate_to_response(aggregate)
 
 
+@router.get(
+    "/api/v1/investigations",
+    response_model=InvestigationListResponse,
+    summary="List investigations (org-scoped inbox)",
+)
+def list_investigations(
+    request: Request,
+    response: Response,
+    org_id: str | None = Query(default=None, description="Organization scope (ADR-017)"),
+    environment_id: str | None = Query(default=None, description="Environment scope"),
+    state: str | None = Query(default=None, description="Filter by investigation state"),
+    limit: int = Query(default=50, ge=1, le=100),
+    offset: int = Query(default=0, ge=0),
+    x_request_id: str | None = Header(default=None, alias="X-Request-Id"),
+    _principal: SessionPrincipal | None = Depends(enforce_auth),
+) -> InvestigationListResponse:
+    rid = _request_id(x_request_id)
+    response.headers["X-Request-Id"] = rid
+    services: AppServices = request.app.state.services
+    rows = services.list_investigations.execute(
+        ListInvestigationsQuery(
+            org_id=org_id,
+            environment_id=environment_id,
+            limit=limit,
+            offset=offset,
+            state=state,
+        )
+    )
+    return InvestigationListResponse(
+        investigations=[investigation_to_list_item(inv) for inv in rows]
+    )
+
+
 @router.get("/api/v1/investigations/{investigation_id}", response_model=InvestigationResponse)
 def get_investigation(
     request: Request,
@@ -103,6 +148,7 @@ def get_investigation(
         examples=[EXAMPLE_INVESTIGATION_ID],
     ),
     x_request_id: str | None = Header(default=None, alias="X-Request-Id"),
+    _principal: SessionPrincipal | None = Depends(enforce_auth),
 ) -> InvestigationResponse:
     rid = _request_id(x_request_id)
     response.headers["X-Request-Id"] = rid
@@ -127,6 +173,7 @@ def run_investigation(
         examples=[EXAMPLE_INVESTIGATION_ID],
     ),
     x_request_id: str | None = Header(default=None, alias="X-Request-Id"),
+    _principal: SessionPrincipal | None = Depends(enforce_auth),
 ) -> InvestigationResponse:
     rid = _request_id(x_request_id)
     response.headers["X-Request-Id"] = rid

@@ -28,6 +28,15 @@ class InvestigationRepository(Protocol):
     def create(self, investigation: Investigation) -> None: ...
     def get(self, investigation_id: str) -> Investigation | None: ...
     def update(self, investigation: Investigation) -> None: ...
+    def list_for_scope(
+        self,
+        org_id: str,
+        environment_id: str,
+        *,
+        limit: int = 50,
+        offset: int = 0,
+        state: str | None = None,
+    ) -> list[Investigation]: ...
 
 
 class EvidenceRepository(Protocol):

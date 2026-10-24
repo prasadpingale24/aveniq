@@ -286,6 +286,14 @@ Engineering decisions for Phase 0b+ are recorded under [`engineering/adrs/`](../
 | ADR-013 | Fixture package format v1 | Accepted |
 | ADR-014 | Deterministic investigator v1 (B03) | Accepted |
 | ADR-015 | Slice 2 Compose, Playground, presentation shell | Accepted |
+| ADR-016 | Product surface, UI program, identity phasing | Accepted |
+| ADR-017 | Investigation tenancy (org-primary isolation) | Accepted |
+| ADR-018 | Actor attribution on investigation events | Accepted |
+| ADR-019 | Presentation profile is not authorization | Accepted |
+| ADR-021 | Delivery spine authority (journey milestones) | Accepted |
+| ADR-022 | Dev session login (M3) | Accepted |
+
+Execution order: [31-delivery-spine.md](31-delivery-spine.md). UI program: [29-ui-program.md](29-ui-program.md). Identity log: [30-identity-access-decisions.md](30-identity-access-decisions.md).
 
 HTTP contract: [`engineering/api/openapi.yaml`](../engineering/api/openapi.yaml).  
 Design gate before implementation: [`engineering/DESIGN_GATE.md`](../engineering/DESIGN_GATE.md).

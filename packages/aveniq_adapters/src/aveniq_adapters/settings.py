@@ -18,5 +18,11 @@ class Settings(BaseSettings):
     playground_poll_timeout_sec: float = 60.0
     playground_poll_interval_sec: float = 0.5
 
+    auth_enabled: bool = False
+    auth_session_secret: str = "dev-insecure-change-in-production"
+    auth_dev_users: str = "engineer:aveniq"
+    auth_cookie_name: str = "aveniq_session"
+    auth_cookie_max_age_sec: int = 86_400
+
     def repo_root(self) -> Path:
         return Path.cwd()

@@ -8,6 +8,8 @@ The roadmap is intentionally hypothesis-driven.
 
 Features should advance when experiments demonstrate value.
 
+> **Implementation order** is **not** defined by the phase numbers below. Use the journey-based **[31-delivery-spine.md](31-delivery-spine.md)** (milestones M0, M1, …) for what to build and validate next. Phases here answer *whether* to invest in a theme (agentic, GenUI, MCP, etc.).
+
 ---
 
 # 2. Phase 0 — Foundation
