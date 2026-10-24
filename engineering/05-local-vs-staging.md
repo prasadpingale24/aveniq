@@ -35,7 +35,7 @@ Standalone files per environment — **no** `override` merge pattern.
 |------|-----|
 | `compose/docker-compose.dev.yml` | Local: API, checkout stand-in, web UI; build contexts |
 | `compose/docker-compose.test.yml` | CI smoke: API + stand-in; ephemeral DB |
-| `compose/docker-compose.staging.yml` | Reserved: VPS Harbor images, persistent volumes (not implemented yet) |
+| `compose/docker-compose.staging.yml` | VPS preview: API + stand-in, env-driven localhost API port; UI on host nginx ([deploy/README.md](../deploy/README.md)) |
 | `compose/docker-compose.prod.yml` | Reserved: production topology (not implemented yet) |
 
 See [compose/README.md](../compose/README.md) and [06-slice-2-playground-compose.md](06-slice-2-playground-compose.md).

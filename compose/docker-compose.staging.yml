@@ -1,0 +1,47 @@
+# M7 — VPS staging: API + checkout-stand-in only.
+# UI: static build on host nginx (see deploy/nginx/).
+#
+# From repo root:
+#   cp compose/.env.staging.example compose/.env.staging
+#   # set AUTH_DEV_USERS and AUTH_SESSION_SECRET in .env.staging (never commit)
+#   docker compose -f compose/docker-compose.staging.yml --env-file compose/.env.staging up -d --build
+
+services:
+  checkout-standin:
+    build:
+      context: ../services/checkout-standin
+      dockerfile: Dockerfile
+    # No host ports — avoids clash with Harbor (8081) and similar on shared VPS.
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8081/health')"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+
+  aveniq-api:
+    build:
+      context: ..
+      dockerfile: Dockerfile
+    ports:
+      - "${AVENIQ_API_BIND:-127.0.0.1}:${AVENIQ_API_PORT:-8010}:8000"
+    env_file:
+      - .env.staging
+    environment:
+      AVENIQ_HOST: 0.0.0.0
+      AVENIQ_PORT: "8000"
+      CHECKOUT_STANDIN_URL: http://checkout-standin:8081
+    volumes:
+      - aveniq_staging_data:/data
+    depends_on:
+      checkout-standin:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/health')"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+    restart: unless-stopped
+
+volumes:
+  aveniq_staging_data:
